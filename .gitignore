@@ -1,0 +1,22 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Java / Maven
+target/
+.mvn/wrapper/maven-wrapper.jar
+
+# Logs / runtime
+logs/
+runtime/
+*.log
+
+# Local env
+.env
+.env.*
+

@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: iot-platform-boot
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+# 后续预留：
+# spring:
+#   cloud:
+#     nacos:
+#       config:
+#         server-addr: localhost:8848
+#       discovery:
+#         server-addr: localhost:8848
+

@@ -1,0 +1,33 @@
+version: "3.9"
+
+services:
+  emqx:
+    image: emqx/emqx:5
+    container_name: emqx
+    ports:
+      - "1883:1883"
+      - "18083:18083"
+    environment:
+      EMQX_DASHBOARD__DEFAULT_USERNAME: admin
+      EMQX_DASHBOARD__DEFAULT_PASSWORD: public
+    volumes:
+      - emqx-data:/opt/emqx/data
+      - emqx-log:/opt/emqx/log
+
+  mysql:
+    image: mysql:8
+    container_name: iot_mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: iot_alarm_copilot
+    command: --default-authentication-plugin=mysql_native_password
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+volumes:
+  emqx-data:
+  emqx-log:
+  mysql-data:
+
