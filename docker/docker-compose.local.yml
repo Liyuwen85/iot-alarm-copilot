@@ -1,0 +1,23 @@
+services:
+  broker:
+    image: docker.1ms.run/library/eclipse-mosquitto:2
+    container_name: iot_mqtt_broker
+    ports:
+      - "1883:1883"
+    volumes:
+      - .\mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+
+  mysql:
+    image: docker.1ms.run/library/mysql:8.0
+    container_name: iot_mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: iot_alarm_copilot
+    command: --default-authentication-plugin=mysql_native_password
+    volumes:
+      - mysql-data-local:/var/lib/mysql
+
+volumes:
+  mysql-data-local:
