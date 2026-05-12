@@ -30,6 +30,11 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.example</groupId>
+            <artifactId>iot-persistence-support</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>com.example</groupId>
@@ -71,21 +76,6 @@
             <artifactId>iot-context-audit</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
-            <groupId>com.example</groupId>
-            <artifactId>iot-adapter-mqtt</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.example</groupId>
-            <artifactId>iot-adapter-persistence</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.example</groupId>
-            <artifactId>iot-adapter-ai</artifactId>
-            <version>${project.version}</version>
-        </dependency>
     </dependencies>
 
     <build>
@@ -97,4 +87,3 @@
         </plugins>
     </build>
 </project>
-

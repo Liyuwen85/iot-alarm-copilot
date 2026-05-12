@@ -1,6 +1,12 @@
 spring:
   application:
     name: iot-platform-boot
+  datasource:
+    url: jdbc:mysql://localhost:3306/iot_alarm_copilot?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
+    username: root
+    password: root
+  flyway:
+    enabled: true
 
 server:
   port: 8080
@@ -11,7 +17,15 @@ management:
       exposure:
         include: health,info,metrics
 
-# 后续预留：
+iot:
+  mqtt:
+    enabled: true
+    broker-url: tcp://localhost:1883
+    client-id: iot-platform-backend
+    inbound-topic: iot/+/telemetry
+    qos: 1
+
+# Reserved for future Spring Cloud Alibaba migration.
 # spring:
 #   cloud:
 #     nacos:
@@ -19,4 +33,3 @@ management:
 #         server-addr: localhost:8848
 #       discovery:
 #         server-addr: localhost:8848
-
