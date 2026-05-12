@@ -25,61 +25,15 @@
 └─ README.md
 ```
 
-## 当前模块边界
-
--   `access`
-    
--   `device`
-    
--   `telemetry`
-    
--   `rule`
-    
--   `alarm`
-    
--   `inspection`
-    
--   `ai`
-    
--   `audit`
-    
-
-后续预留：
-
--   `notification`
-    
--   `query`
-    
--   `telemetry-processing`
-    
--   `edge-node`
-    
-
 ## 当前状态
 
 当前仓库先完成了：
 
--   设计文档
-    
--   目录骨架
-    
--   Maven 多模块骨架
-    
--   Docker Compose
-    
--   初始化 SQL
-    
--   Mock Device 骨架
+-   跑通了 mock device --> broker --> backend --> m'y's'q
     
 
 下一步按文档顺序继续做：
 
-1.  起 `EMQX + MySQL`
+1.  做规则与告警
     
-2.  细化 `device / telemetry` 上下文
-    
-3.  接 MQTT 消费
-    
-4.  做规则与告警
-    
-5.  接 AI 摘要
+2.  接 AI 摘要
