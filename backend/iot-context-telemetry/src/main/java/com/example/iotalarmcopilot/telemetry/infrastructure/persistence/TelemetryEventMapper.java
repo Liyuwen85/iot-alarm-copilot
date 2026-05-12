@@ -3,6 +3,9 @@ package com.example.iotalarmcopilot.telemetry.infrastructure.persistence;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Options;
+import org.apache.ibatis.annotations.Select;
+
+import java.util.List;
 
 @Mapper
 public interface TelemetryEventMapper {
@@ -26,4 +29,18 @@ public interface TelemetryEventMapper {
             """)
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(TelemetryEventRecord record);
+
+    @Select("""
+            SELECT
+                id,
+                device_id,
+                temperature,
+                humidity,
+                reported_at,
+                raw_json
+            FROM telemetry_event
+            ORDER BY reported_at DESC, id DESC
+            LIMIT #{limit}
+            """)
+    List<TelemetryEventRecord> selectRecent(int limit);
 }

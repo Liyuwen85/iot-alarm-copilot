@@ -1,7 +1,9 @@
 package com.example.iotalarmcopilot.telemetry.application;
 
+import com.example.iotalarmcopilot.contract.event.TelemetryRecordedEvent;
 import com.example.iotalarmcopilot.telemetry.domain.TelemetryEvent;
 import com.example.iotalarmcopilot.telemetry.domain.TelemetryEventRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 /**
@@ -11,9 +13,13 @@ import org.springframework.stereotype.Service;
 public class TelemetryIngestApplicationService {
 
     private final TelemetryEventRepository telemetryEventRepository;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
-    public TelemetryIngestApplicationService(TelemetryEventRepository telemetryEventRepository) {
+    public TelemetryIngestApplicationService(
+            TelemetryEventRepository telemetryEventRepository,
+            ApplicationEventPublisher applicationEventPublisher) {
         this.telemetryEventRepository = telemetryEventRepository;
+        this.applicationEventPublisher = applicationEventPublisher;
     }
 
     /**
@@ -30,6 +36,16 @@ public class TelemetryIngestApplicationService {
                 command.humidity(),
                 command.reportedAt(),
                 command.rawJson());
-        return telemetryEventRepository.save(event);
+        TelemetryEvent savedEvent = telemetryEventRepository.save(event);
+
+        // 触发订阅事件
+        applicationEventPublisher.publishEvent(new TelemetryRecordedEvent(
+                savedEvent.id(),
+                savedEvent.deviceId(),
+                savedEvent.temperature(),
+                savedEvent.humidity(),
+                savedEvent.reportedAt()));
+
+        return savedEvent;
     }
 }
