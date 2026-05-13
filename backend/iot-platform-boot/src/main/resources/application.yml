@@ -24,6 +24,27 @@ iot:
     client-id: iot-platform-backend
     inbound-topic: iot/+/telemetry
     qos: 1
+  rule:
+    enabled: true
+    definitions:
+      - code: temperature_high
+        name: 高温告警规则
+        enabled: true
+        metric-name: temperature
+        threshold: 80
+        expression: "temperature != null and temperature >= 80"
+      - code: temperature_critical
+        name: 超高温告警规则
+        enabled: true
+        metric-name: temperature
+        threshold: 95
+        expression: "temperature != null and temperature >= 95"
+      - code: humidity_high
+        name: 高湿告警规则
+        enabled: true
+        metric-name: humidity
+        threshold: 90
+        expression: "humidity != null and humidity >= 90"
 
 # Reserved for future Spring Cloud Alibaba migration.
 # spring:
