@@ -1,11 +1,19 @@
 package com.example.iotalarmcopilot.access.application;
 
-import com.example.iotalarmcopilot.shared.BaseDomainException;
+import com.example.iotalarmcopilot.BaseDomainException;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Objects;
 
+/**
+ * 遥测数据接入
+ * @param deviceId
+ * @param temperature
+ * @param humidity
+ * @param reportedAt
+ * @param rawJson
+ */
 public record TelemetryIngressCommand(
         String deviceId,
         BigDecimal temperature,

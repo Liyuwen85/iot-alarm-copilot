@@ -12,9 +12,9 @@
     <name>iot-integration-contract</name>
     <dependencies>
         <dependency>
-            <groupId>com.example</groupId>
-            <artifactId>iot-shared-kernel</artifactId>
-            <version>${project.version}</version>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.38</version>
         </dependency>
     </dependencies>
 </project>

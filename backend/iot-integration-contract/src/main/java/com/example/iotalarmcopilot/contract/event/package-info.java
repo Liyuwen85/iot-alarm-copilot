@@ -1,4 +1,4 @@
 /**
- * Versionable integration events shared across contexts.
+ * Versionable cross-context integration events.
  */
 package com.example.iotalarmcopilot.contract.event;

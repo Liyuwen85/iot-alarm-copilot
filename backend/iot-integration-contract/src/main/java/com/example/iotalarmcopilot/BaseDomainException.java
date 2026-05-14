@@ -1,4 +1,4 @@
-package com.example.iotalarmcopilot.shared;
+package com.example.iotalarmcopilot;
 
 /**
  * 领域基础异常类

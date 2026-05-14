@@ -1,34 +1,35 @@
-package com.example.iotalarmcopilot.contract.event;
+package com.example.iotalarmcopilot.access.domain;
 
-import com.example.iotalarmcopilot.DomainEvent;
 import com.example.iotalarmcopilot.contract.telemetry.TelemetryMetrics;
+import com.example.iotalarmcopilot.BaseDomainException;
 
 import java.time.Instant;
 import java.util.Objects;
 
 /**
- * 遥测记录事件
+ * 接入层标准化后的遥测载荷
  *
- * @param telemetryEventId
  * @param deviceId
  * @param metrics
  * @param reportedAt
+ * @param rawJson
  */
-public record TelemetryRecordedEvent(
-        Long telemetryEventId,
+public record TelemetryPayload(
         String deviceId,
         TelemetryMetrics metrics,
-        Instant reportedAt) implements DomainEvent {
+        Instant reportedAt,
+        String rawJson) {
 
-    public static final String EVENT_TYPE = "telemetry.recorded";
-
-    public TelemetryRecordedEvent {
-        Objects.requireNonNull(telemetryEventId, "telemetryEventId must not be null");
+    public TelemetryPayload {
         Objects.requireNonNull(deviceId, "deviceId must not be null");
         Objects.requireNonNull(metrics, "metrics must not be null");
         Objects.requireNonNull(reportedAt, "reportedAt must not be null");
+        Objects.requireNonNull(rawJson, "rawJson must not be null");
         if (deviceId.isBlank()) {
-            throw new IllegalArgumentException("deviceId must not be blank");
+            throw new BaseDomainException("deviceId must not be blank");
+        }
+        if (rawJson.isBlank()) {
+            throw new BaseDomainException("rawJson must not be blank");
         }
     }
 
@@ -38,15 +39,5 @@ public record TelemetryRecordedEvent(
 
     public java.math.BigDecimal humidity() {
         return metrics.humidity();
-    }
-
-    @Override
-    public String eventType() {
-        return EVENT_TYPE;
-    }
-
-    @Override
-    public Instant occurredAt() {
-        return reportedAt;
     }
 }

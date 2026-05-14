@@ -1,4 +1,4 @@
-package com.example.iotalarmcopilot.telemetry.application;
+package com.example.iotalarmcopilot.access.domain;
 
 import com.example.iotalarmcopilot.contract.telemetry.TelemetryMetrics;
 import com.example.iotalarmcopilot.BaseDomainException;
@@ -7,32 +7,31 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * 记录遥测数据命令
+ * 外部协议报文解析后的接入消息
+ *
+ * @param deviceId
+ * @param metrics
+ * @param reportedAt
+ * @param rawJson
  */
-public record RecordTelemetryCommand(
+public record TelemetryMessage(
         String deviceId,
         TelemetryMetrics metrics,
         Instant reportedAt,
         String rawJson) {
 
-    public RecordTelemetryCommand {
-        Objects.requireNonNull(deviceId, "deviceId must not be null");
+    public TelemetryMessage {
         Objects.requireNonNull(metrics, "metrics must not be null");
         Objects.requireNonNull(reportedAt, "reportedAt must not be null");
         Objects.requireNonNull(rawJson, "rawJson must not be null");
-        if (deviceId.isBlank()) {
-            throw new BaseDomainException("deviceId must not be blank");
+        if (deviceId != null) {
+            deviceId = deviceId.trim();
+            if (deviceId.isBlank()) {
+                deviceId = null;
+            }
         }
         if (rawJson.isBlank()) {
             throw new BaseDomainException("rawJson must not be blank");
         }
-    }
-
-    public java.math.BigDecimal temperature() {
-        return metrics.temperature();
-    }
-
-    public java.math.BigDecimal humidity() {
-        return metrics.humidity();
     }
 }

@@ -5,7 +5,7 @@
 ## 当前模块
 
 - `iot-platform-boot` 单体应用启动入口
-- `iot-shared-kernel` 最小的共享模块，只放全局共用抽象，如领域事件、基础异常等等
+- `iot-integration-contract` 共享协作契约模块，统一承载跨上下文事件契约，以及像 `TelemetryMetricName`、`TelemetryMetrics` 这类多个上下文复用的共享语义对象
 - `iot-persistence-support` 数据库公共支撑，只负责数据源、事务、Flyway、MyBatis 扫描等横切基础设施。
 - `iot-context-access` 接入上下文，职责“设备怎么进入平台”，如：topic解析、接入身份验证、幂等键、协议到领域命令事件的转换等；MQTT 接入适配实现在 `access.interfaces.mqtt`。
 - `iot-context-device` 设备上下文，负责设备注册、身份、影子、分组、生命周期、产品模型这类“设备主数据”。

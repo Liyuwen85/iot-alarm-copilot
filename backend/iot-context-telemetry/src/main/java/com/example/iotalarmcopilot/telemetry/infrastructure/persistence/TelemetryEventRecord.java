@@ -1,5 +1,7 @@
 package com.example.iotalarmcopilot.telemetry.infrastructure.persistence;
 
+import com.example.iotalarmcopilot.contract.telemetry.TelemetryMetrics;
+import com.example.iotalarmcopilot.telemetry.domain.DeviceId;
 import com.example.iotalarmcopilot.telemetry.domain.TelemetryEvent;
 import lombok.Data;
 
@@ -22,7 +24,7 @@ public class TelemetryEventRecord {
     public static TelemetryEventRecord fromDomain(TelemetryEvent event) {
         TelemetryEventRecord record = new TelemetryEventRecord();
         record.setId(event.id());
-        record.setDeviceId(event.deviceId());
+        record.setDeviceId(event.deviceId().value());
         record.setTemperature(event.temperature());
         record.setHumidity(event.humidity());
         record.setReportedAt(event.reportedAt());
@@ -31,7 +33,11 @@ public class TelemetryEventRecord {
     }
 
     public TelemetryEvent toDomain() {
-        return new TelemetryEvent(id, deviceId, temperature, humidity, reportedAt, rawJson);
+        return new TelemetryEvent(
+                id,
+                new DeviceId(deviceId),
+                TelemetryMetrics.ofTemperatureAndHumidity(temperature, humidity),
+                reportedAt,
+                rawJson);
     }
-
 }

@@ -1,6 +1,6 @@
 package com.example.iotalarmcopilot.telemetry.infrastructure.persistence;
 
-import com.example.iotalarmcopilot.shared.BaseDomainException;
+import com.example.iotalarmcopilot.BaseDomainException;
 import com.example.iotalarmcopilot.telemetry.domain.TelemetryEvent;
 import com.example.iotalarmcopilot.telemetry.domain.TelemetryEventRepository;
 import org.springframework.stereotype.Repository;

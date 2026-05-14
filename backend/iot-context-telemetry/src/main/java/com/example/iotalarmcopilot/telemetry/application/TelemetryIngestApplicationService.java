@@ -22,30 +22,18 @@ public class TelemetryIngestApplicationService {
         this.applicationEventPublisher = applicationEventPublisher;
     }
 
-    /**
-     * 记录遥测数据
-     *
-     * @param command
-     * @return
-     */
     public TelemetryEvent record(RecordTelemetryCommand command) {
-        TelemetryEvent event = new TelemetryEvent(
-                null,
+        TelemetryEvent event = TelemetryEvent.record(
                 command.deviceId(),
-                command.temperature(),
-                command.humidity(),
+                command.metrics(),
                 command.reportedAt(),
                 command.rawJson());
         TelemetryEvent savedEvent = telemetryEventRepository.save(event);
-
-        // 触发订阅事件
         applicationEventPublisher.publishEvent(new TelemetryRecordedEvent(
                 savedEvent.id(),
-                savedEvent.deviceId(),
-                savedEvent.temperature(),
-                savedEvent.humidity(),
+                savedEvent.deviceId().value(),
+                savedEvent.metrics(),
                 savedEvent.reportedAt()));
-
         return savedEvent;
     }
 }
