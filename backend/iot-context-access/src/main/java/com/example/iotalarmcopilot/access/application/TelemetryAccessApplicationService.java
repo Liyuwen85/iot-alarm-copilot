@@ -25,7 +25,27 @@ public class TelemetryAccessApplicationService {
         this.telemetryIngestApplicationService = telemetryIngestApplicationService;
     }
 
+    /**
+     * 接收MQTT遥测数据
+     *
+     * @param topic
+     * @param payload
+     */
     public void ingestMqttTelemetry(String topic, String payload) {
+        ingestTelemetry(topic, payload);
+    }
+
+    /**
+     * 接收Kafka遥测数据
+     *
+     * @param topic
+     * @param payload
+     */
+    public void ingestKafkaTelemetry(String topic, String payload) {
+        ingestTelemetry(topic, payload);
+    }
+
+    public void ingestTelemetry(String topic, String payload) {
         // 解析原始遥测数据
         TelemetryMessage telemetryMessage = telemetryMessageParser.parse(payload);
         // 规范化遥测数据
