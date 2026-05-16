@@ -2,9 +2,9 @@ spring:
   application:
     name: iot-platform-boot
   datasource:
-    url: jdbc:mysql://localhost:3306/iot_alarm_copilot?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
-    username: root
-    password: root
+    url: jdbc:postgresql://localhost:5432/iot_alarm_copilot
+    username: postgres
+    password: postgres
   flyway:
     enabled: true
   kafka:
@@ -36,6 +36,11 @@ iot:
     enabled: true
     telemetry-topic: iot.telemetry.raw
     consumer-group: iot-platform-access
+  timeseries:
+    enabled: true
+    url: jdbc:postgresql://localhost:5432/iot_telemetry_hot
+    username: postgres
+    password: postgres
   rule:
     enabled: true
     definitions:

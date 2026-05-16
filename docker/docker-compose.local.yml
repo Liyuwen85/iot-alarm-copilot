@@ -27,17 +27,18 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
-  mysql:
-    image: docker.1ms.run/library/mysql:8.0
-    container_name: iot_mysql
+  timescaledb:
+    image: docker.1ms.run/timescale/timescaledb:latest-pg16
+    container_name: iot_timescaledb
     ports:
-      - "3306:3306"
+      - "5432:5432"
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: iot_alarm_copilot
-    command: --default-authentication-plugin=mysql_native_password
+      POSTGRES_DB: iot_alarm_copilot
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     volumes:
-      - mysql-data-local:/var/lib/mysql
+      - .\init\01-create-timeseries-db.sql:/docker-entrypoint-initdb.d/01-create-timeseries-db.sql:ro
+      - timescaledb-data-local:/var/lib/postgresql/data
 
 volumes:
-  mysql-data-local:
+  timescaledb-data-local:

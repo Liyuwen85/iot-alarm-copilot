@@ -18,16 +18,25 @@ public record TelemetryEvent(
         String rawJson) {
 
     public static TelemetryEvent record(
+            Long id,
             String deviceId,
             TelemetryMetrics metrics,
             Instant reportedAt,
             String rawJson) {
         return new TelemetryEvent(
-                null,
+                id,
                 new DeviceId(deviceId),
                 metrics,
                 reportedAt,
                 rawJson);
+    }
+
+    public static TelemetryEvent record(
+            String deviceId,
+            TelemetryMetrics metrics,
+            Instant reportedAt,
+            String rawJson) {
+        return record(null, deviceId, metrics, reportedAt, rawJson);
     }
 
     public static TelemetryEvent record(

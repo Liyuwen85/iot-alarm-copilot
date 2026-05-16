@@ -13,7 +13,6 @@
 
     <modules>
         <module>iot-platform-boot</module>
-        <module>iot-shared-kernel</module>
         <module>iot-integration-contract</module>
         <module>iot-persistence-support</module>
         <module>iot-context-access</module>
