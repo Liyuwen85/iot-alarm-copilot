@@ -1,77 +1,85 @@
 package com.example.iotalarmcopilot.rule.domain;
 
-import com.example.iotalarmcopilot.shared.BaseDomainException;
+import com.example.iotalarmcopilot.contract.telemetry.TelemetryMetricName;
+import com.example.iotalarmcopilot.contract.telemetry.TelemetryMetrics;
+import com.example.iotalarmcopilot.BaseDomainException;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 /**
- * 遥测规则事实领域模型
+ * 遥测事件-领域计算输入模型
  *
  * @param telemetryEventId
  * @param deviceId
- * @param temperature
- * @param humidity
+ * @param metrics
  * @param reportedAt
  */
 public record TelemetryRuleFacts(
         Long telemetryEventId,
-        String deviceId,
-        BigDecimal temperature,
-        BigDecimal humidity,
+        DeviceId deviceId,
+        TelemetryMetrics metrics,
         Instant reportedAt) {
 
-    // 支持的指标名
-    private static final Set<String> SUPPORTED_METRIC_NAMES = Set.of("temperature", "humidity");
+    private static final Set<TelemetryMetricName> SUPPORTED_METRIC_NAMES = Set.of(
+            TelemetryMetricName.TEMPERATURE,
+            TelemetryMetricName.HUMIDITY);
+
+    public static TelemetryRuleFacts fromTelemetryRecorded(
+            Long telemetryEventId,
+            String deviceId,
+            TelemetryMetrics metrics,
+            Instant reportedAt) {
+        return new TelemetryRuleFacts(
+                telemetryEventId,
+                new DeviceId(deviceId),
+                metrics,
+                reportedAt);
+    }
+
+    public static TelemetryRuleFacts fromTelemetryRecorded(
+            Long telemetryEventId,
+            String deviceId,
+            BigDecimal temperature,
+            BigDecimal humidity,
+            Instant reportedAt) {
+        return fromTelemetryRecorded(
+                telemetryEventId,
+                deviceId,
+                TelemetryMetrics.ofTemperatureAndHumidity(temperature, humidity),
+                reportedAt);
+    }
 
     public TelemetryRuleFacts {
         Objects.requireNonNull(telemetryEventId, "telemetryEventId must not be null");
         Objects.requireNonNull(deviceId, "deviceId must not be null");
+        Objects.requireNonNull(metrics, "metrics must not be null");
         Objects.requireNonNull(reportedAt, "reportedAt must not be null");
-        if (deviceId.isBlank()) {
-            throw new BaseDomainException("deviceId must not be blank");
-        }
     }
 
-    /**
-     * 转换为规则表达式变量
-     *
-     * @return
-     */
     public Map<String, Object> toExpressionVariables() {
         Map<String, Object> variables = new LinkedHashMap<>();
         variables.put("telemetryEventId", telemetryEventId);
-        variables.put("deviceId", deviceId);
-        variables.put("temperature", temperature);
-        variables.put("humidity", humidity);
+        variables.put("deviceId", deviceId.value());
+        variables.putAll(metrics.toFlatMap());
         variables.put("reportedAt", reportedAt);
         variables.put("reportedAtEpochMs", reportedAt.toEpochMilli());
         return variables;
     }
 
-    /**
-     * 是否支持此指标
-     *
-     * @param metricName
-     * @return
-     */
-    public static boolean supportsMetricName(String metricName) {
-        return metricName != null
-                && SUPPORTED_METRIC_NAMES.contains(metricName.trim().toLowerCase(Locale.ROOT));
+    public static boolean supportsMetricName(TelemetryMetricName metricName) {
+        return metricName != null && SUPPORTED_METRIC_NAMES.contains(metricName);
     }
 
-    /**
-     * 返回指标名对应的值
-     *
-     * @param metricName
-     * @return
-     */
-    public BigDecimal metricValue(String metricName) {
-        return switch (metricName.trim().toLowerCase(Locale.ROOT)) {
-            case "temperature" -> temperature;
-            case "humidity" -> humidity;
-            default -> throw new BaseDomainException("Unsupported metricName: " + metricName);
-        };
+    public BigDecimal metricValue(TelemetryMetricName metricName) {
+        BigDecimal value = metrics.valueOf(metricName);
+        if (value == null) {
+            throw new BaseDomainException("Metric value not found: " + metricName.value());
+        }
+        return value;
     }
 }

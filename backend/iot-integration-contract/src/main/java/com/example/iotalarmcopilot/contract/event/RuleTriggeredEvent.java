@@ -1,6 +1,7 @@
 package com.example.iotalarmcopilot.contract.event;
 
-import com.example.iotalarmcopilot.shared.DomainEvent;
+import com.example.iotalarmcopilot.contract.telemetry.TelemetryMetricName;
+import com.example.iotalarmcopilot.DomainEvent;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -21,7 +22,7 @@ public record RuleTriggeredEvent(
         String ruleCode,
         Long telemetryEventId,
         String deviceId,
-        String metricName,
+        TelemetryMetricName metricName,
         BigDecimal metricValue,
         BigDecimal threshold,
         Instant triggeredAt) implements DomainEvent {
@@ -41,9 +42,6 @@ public record RuleTriggeredEvent(
         }
         if (deviceId.isBlank()) {
             throw new IllegalArgumentException("deviceId must not be blank");
-        }
-        if (metricName.isBlank()) {
-            throw new IllegalArgumentException("metricName must not be blank");
         }
     }
 

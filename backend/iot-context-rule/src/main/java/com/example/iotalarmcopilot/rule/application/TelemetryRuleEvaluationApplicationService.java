@@ -5,11 +5,10 @@ import com.example.iotalarmcopilot.rule.domain.*;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 遥测评估规则应用服务
+ * 遥测规则评估应用服务
  */
 @Service
 public class TelemetryRuleEvaluationApplicationService {
@@ -17,6 +16,7 @@ public class TelemetryRuleEvaluationApplicationService {
     private final RuleDefinitionRepository ruleDefinitionRepository;
     private final RuleExpressionEvaluator ruleExpressionEvaluator;
     private final ApplicationEventPublisher applicationEventPublisher;
+    private final TelemetryRuleMatcher telemetryRuleMatcher = new TelemetryRuleMatcher();
 
     public TelemetryRuleEvaluationApplicationService(
             RuleDefinitionRepository ruleDefinitionRepository,
@@ -28,40 +28,33 @@ public class TelemetryRuleEvaluationApplicationService {
     }
 
     /**
-     * 评估遥测规则
+     * 遥测规则评估
      *
      * @param command
-     * @return 触发结果列表
+     * @return
      */
     public List<RuleTriggeredResult> evaluate(EvaluateTelemetryRuleCommand command) {
-        // 创建本上下文领域对象
-        TelemetryRuleFacts facts = new TelemetryRuleFacts(
+        TelemetryRuleFacts facts = TelemetryRuleFacts.fromTelemetryRecorded(
                 command.telemetryEventId(),
                 command.deviceId(),
-                command.temperature(),
-                command.humidity(),
+                command.metrics(),
                 command.reportedAt());
 
-        // 触发结果列表
-        List<RuleTriggeredResult> triggeredResults = new ArrayList<>();
-        // 加载规则定义列表
-        for (RuleDefinition ruleDefinition : ruleDefinitionRepository.findEnabledTelemetryRules()) {
-            // 是否满足规则触发条件
-            RuleTriggeredResult result = ruleDefinition.evaluate(facts, ruleExpressionEvaluator);
-            if (!result.triggered()) {
-                continue;
-            }
-            // 发布规则触发事件
+        List<RuleDefinition> telemetryRules = ruleDefinitionRepository.findTelemetryRules();
+        List<RuleTriggeredResult> triggeredResults = telemetryRuleMatcher.evaluate(
+                telemetryRules,
+                facts,
+                ruleExpressionEvaluator);
+        for (RuleTriggeredResult result : triggeredResults) {
             applicationEventPublisher.publishEvent(new RuleTriggeredEvent(
-                    result.ruleCode(),
+                    result.ruleCode().value(),
                     result.telemetryEventId(),
-                    result.deviceId(),
+                    result.deviceId().value(),
                     result.metricName(),
                     result.metricValue(),
                     result.threshold(),
                     result.triggeredAt()));
-            triggeredResults.add(result);
         }
-        return List.copyOf(triggeredResults);
+        return triggeredResults;
     }
 }

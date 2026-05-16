@@ -30,8 +30,7 @@ public class TelemetryRecordedRuleHandler {
         telemetryRuleEvaluationApplicationService.evaluate(new EvaluateTelemetryRuleCommand(
                 event.telemetryEventId(),
                 event.deviceId(),
-                event.temperature(),
-                event.humidity(),
+                event.metrics(),
                 event.reportedAt()));
     }
 }

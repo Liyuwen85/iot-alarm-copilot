@@ -7,5 +7,5 @@ import java.util.List;
  */
 public interface RuleDefinitionRepository {
 
-    List<RuleDefinition> findEnabledTelemetryRules();
+    List<RuleDefinition> findTelemetryRules();
 }

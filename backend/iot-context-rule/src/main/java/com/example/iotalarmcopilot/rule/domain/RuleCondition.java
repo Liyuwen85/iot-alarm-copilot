@@ -1,11 +1,11 @@
 package com.example.iotalarmcopilot.rule.domain;
 
-import com.example.iotalarmcopilot.shared.BaseDomainException;
+import com.example.iotalarmcopilot.BaseDomainException;
 
 import java.util.Objects;
 
 /**
- * 规则表达式
+ * 规则表达式值对象
  *
  * @param language  支持的表达式语言
  * @param expression 表达式

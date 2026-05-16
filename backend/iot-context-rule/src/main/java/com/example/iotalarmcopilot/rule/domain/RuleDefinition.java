@@ -1,9 +1,11 @@
 package com.example.iotalarmcopilot.rule.domain;
 
-import com.example.iotalarmcopilot.shared.BaseDomainException;
+import com.example.iotalarmcopilot.contract.telemetry.TelemetryMetricName;
+import com.example.iotalarmcopilot.BaseDomainException;
 
 import java.math.BigDecimal;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * 规则定义领域实体
@@ -11,60 +13,84 @@ import java.util.Objects;
  * @param id
  * @param code
  * @param name
- * @param enabled
+ * @param status
  * @param metricName
  * @param threshold
  * @param condition
  */
 public record RuleDefinition(
         Long id,
-        String code,
+        RuleCode code,
         String name,
-        boolean enabled,
-        String metricName,
+        RuleStatus status,
+        TelemetryMetricName metricName,
         BigDecimal threshold,
         RuleCondition condition) {
+
+    public static RuleDefinition create(
+            RuleCode code,
+            String name,
+            TelemetryMetricName metricName,
+            BigDecimal threshold,
+            RuleCondition condition) {
+        return new RuleDefinition(
+                null,
+                code,
+                name,
+                RuleStatus.DRAFT,
+                metricName,
+                threshold,
+                condition);
+    }
 
     public RuleDefinition {
         Objects.requireNonNull(code, "code must not be null");
         Objects.requireNonNull(name, "name must not be null");
+        Objects.requireNonNull(status, "status must not be null");
         Objects.requireNonNull(metricName, "metricName must not be null");
         Objects.requireNonNull(threshold, "threshold must not be null");
         Objects.requireNonNull(condition, "condition must not be null");
-        if (code.isBlank()) {
-            throw new BaseDomainException("code must not be blank");
-        }
         if (name.isBlank()) {
             throw new BaseDomainException("name must not be blank");
         }
-        if (metricName.isBlank()) {
-            throw new BaseDomainException("metricName must not be blank");
-        }
     }
 
-    /**
-     * 评估规则
-     *
-     * @param facts                   遥测数据
-     * @param ruleExpressionEvaluator 表达式执行器
-     * @return
-     */
-    public RuleTriggeredResult evaluate(TelemetryRuleFacts facts, RuleExpressionEvaluator ruleExpressionEvaluator) {
-        if (!enabled) {
-            return RuleTriggeredResult.notTriggered();
+    public RuleDefinition publish() {
+        RuleStatusPolicy.ensurePublishAllowed(status);
+        return new RuleDefinition(id, code, name, RuleStatus.ACTIVE, metricName, threshold, condition);
+    }
+
+    public RuleDefinition disable() {
+        RuleStatusPolicy.ensureDisableAllowed(status);
+        return new RuleDefinition(id, code, name, RuleStatus.INACTIVE, metricName, threshold, condition);
+    }
+
+    public RuleDefinition reactivate() {
+        RuleStatusPolicy.ensureReactivateAllowed(status);
+        return new RuleDefinition(id, code, name, RuleStatus.ACTIVE, metricName, threshold, condition);
+    }
+
+    public boolean executable() {
+        return status.executable();
+    }
+
+    public Optional<RuleTriggeredResult> evaluate(
+            TelemetryRuleFacts facts,
+            RuleExpressionEvaluator ruleExpressionEvaluator) {
+        if (!executable()) {
+            return Optional.empty();
         }
         boolean matched = ruleExpressionEvaluator.evaluate(condition, facts);
         if (!matched) {
-            return RuleTriggeredResult.notTriggered();
+            return Optional.empty();
         }
-        // 匹配就触发规则事件
-        return RuleTriggeredResult.triggered(
+        return Optional.of(new RuleTriggeredResult(
                 code,
                 facts.telemetryEventId(),
                 facts.deviceId(),
                 metricName,
                 facts.metricValue(metricName),
                 threshold,
-                facts.reportedAt());
+                facts.reportedAt()));
     }
 }

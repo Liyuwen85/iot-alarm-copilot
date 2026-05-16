@@ -4,7 +4,7 @@ import com.example.iotalarmcopilot.rule.domain.RuleCondition;
 import com.example.iotalarmcopilot.rule.domain.RuleExpressionEvaluator;
 import com.example.iotalarmcopilot.rule.domain.RuleExpressionLanguage;
 import com.example.iotalarmcopilot.rule.domain.TelemetryRuleFacts;
-import com.example.iotalarmcopilot.shared.BaseDomainException;
+import com.example.iotalarmcopilot.BaseDomainException;
 import org.springframework.context.expression.MapAccessor;
 import org.springframework.expression.Expression;
 import org.springframework.expression.ExpressionParser;
