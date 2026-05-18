@@ -9,6 +9,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
+/**
+ * 告警创建审计处理器
+ */
 @Slf4j
 @Component
 public class AlarmCreatedAuditHandler {
@@ -23,6 +26,11 @@ public class AlarmCreatedAuditHandler {
         this.objectMapper = objectMapper;
     }
 
+    /**
+     * 监听告警创建事件
+     *
+     * @param event
+     */
     @EventListener
     public void onAlarmCreated(AlarmCreatedEvent event) {
         auditApplicationService.record(new RecordAuditLogCommand(

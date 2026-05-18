@@ -9,6 +9,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
+/**
+ * 告警关闭审计处理器
+ */
 @Slf4j
 @Component
 public class AlarmClosedAuditHandler {
@@ -23,6 +26,11 @@ public class AlarmClosedAuditHandler {
         this.objectMapper = objectMapper;
     }
 
+    /**
+     * 监听告警关闭事件
+     *
+     * @param event
+     */
     @EventListener
     public void onAlarmClosed(AlarmClosedEvent event) {
         auditApplicationService.record(new RecordAuditLogCommand(
