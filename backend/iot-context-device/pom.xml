@@ -10,12 +10,4 @@
     </parent>
     <artifactId>iot-context-device</artifactId>
     <name>iot-context-device</name>
-    <dependencies>
-        <dependency>
-            <groupId>com.example</groupId>
-            <artifactId>iot-shared-kernel</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-    </dependencies>
 </project>
-

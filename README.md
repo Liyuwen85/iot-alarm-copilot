@@ -1,6 +1,6 @@
 # iot-alarm-copilot
 
-这是一个样板工程，主要为了从0到1学习 IoT后端开发，跑通主核心lian'l。
+这是一个样板工程，主要为了从0到1学习 IoT后端开发，跑通核心主链路。
 
 当前阶段目标：
 
@@ -18,7 +18,7 @@
 ```text
 .
 ├─ backend/                  # Java 后端多模块骨架
-├─ docker/                   # 本地依赖
+├─ docker/                   # 依赖镜像
 ├─ docs/                     # 设计文档与架构图
 ├─ mock-device/              # Java Mock Device 骨架
 ├─ scripts/                  # 启动与初始化脚本
@@ -27,13 +27,15 @@
 
 ## 当前状态
 
-当前仓库先完成了：
+![本地运行](file:///E:/work/IoT-project/code/mockdevice_mqttbridge_backend.png)
 
--   跑通了 mock device --> broker --> backend --> m'y's'q
+当前完成：
+
+-   跑通了 mock device --> broker --> (mqtt\_kafka\_bridge) --> kafka --> backend --> postgresql (RDBMS and TSDB)
+    
+-   启动参考 [RUN-LOCAL](RUN-LOCAL.md)
     
 
-下一步按文档顺序继续做：
+下一步继续做：
 
-1.  做规则与告警
-    
-2.  接 AI 摘要
+1.  接 AI 摘要
