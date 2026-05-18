@@ -27,7 +27,7 @@
 
 ## 当前状态
 
-![本地运行](file:///E:/work/IoT-project/code/mockdevice_mqttbridge_backend.png)
+![本地运行](./mockdevice_mqttbridge_backend.png)
 
 当前完成：
 
