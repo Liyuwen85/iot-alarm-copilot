@@ -1,5 +1,4 @@
 /**
- * Domain layer for device models such as ProductModel and LifecyclePolicy.
+ * Device domain root package.
  */
 package com.example.iotalarmcopilot.device.domain;
-
