@@ -1,6 +1,7 @@
-package com.example.iotalarmcopilot.rule.domain;
+package com.example.iotalarmcopilot.rule.domain.policy;
 
 import com.example.iotalarmcopilot.BaseDomainException;
+import com.example.iotalarmcopilot.rule.domain.model.RuleStatus;
 
 /**
  * 规则状态策略

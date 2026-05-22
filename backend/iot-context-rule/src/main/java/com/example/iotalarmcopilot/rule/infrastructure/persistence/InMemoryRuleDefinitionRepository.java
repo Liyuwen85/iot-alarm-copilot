@@ -1,12 +1,12 @@
 package com.example.iotalarmcopilot.rule.infrastructure.persistence;
 
 import com.example.iotalarmcopilot.contract.telemetry.TelemetryMetricName;
-import com.example.iotalarmcopilot.rule.domain.RuleCode;
-import com.example.iotalarmcopilot.rule.domain.RuleCondition;
-import com.example.iotalarmcopilot.rule.domain.RuleDefinition;
-import com.example.iotalarmcopilot.rule.domain.RuleDefinitionRepository;
-import com.example.iotalarmcopilot.rule.domain.RuleExpressionLanguage;
-import com.example.iotalarmcopilot.rule.domain.TelemetryRuleFacts;
+import com.example.iotalarmcopilot.rule.domain.model.RuleCode;
+import com.example.iotalarmcopilot.rule.domain.model.RuleCondition;
+import com.example.iotalarmcopilot.rule.domain.model.RuleDefinition;
+import com.example.iotalarmcopilot.rule.domain.model.RuleExpressionLanguage;
+import com.example.iotalarmcopilot.rule.domain.model.TelemetryRuleFacts;
+import com.example.iotalarmcopilot.rule.domain.repository.RuleDefinitionRepository;
 import com.example.iotalarmcopilot.rule.infrastructure.config.RuleProperties;
 import com.example.iotalarmcopilot.BaseDomainException;
 import org.springframework.stereotype.Repository;

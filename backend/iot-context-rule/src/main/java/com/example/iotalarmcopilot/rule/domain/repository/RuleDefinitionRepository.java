@@ -1,4 +1,6 @@
-package com.example.iotalarmcopilot.rule.domain;
+package com.example.iotalarmcopilot.rule.domain.repository;
+
+import com.example.iotalarmcopilot.rule.domain.model.RuleDefinition;
 
 import java.util.List;
 

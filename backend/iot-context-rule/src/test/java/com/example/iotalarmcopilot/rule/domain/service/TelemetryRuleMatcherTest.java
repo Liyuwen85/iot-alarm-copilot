@@ -1,6 +1,12 @@
-package com.example.iotalarmcopilot.rule.domain;
+package com.example.iotalarmcopilot.rule.domain.service;
 
 import com.example.iotalarmcopilot.contract.telemetry.TelemetryMetricName;
+import com.example.iotalarmcopilot.rule.domain.model.RuleCode;
+import com.example.iotalarmcopilot.rule.domain.model.RuleCondition;
+import com.example.iotalarmcopilot.rule.domain.model.RuleDefinition;
+import com.example.iotalarmcopilot.rule.domain.model.RuleExpressionLanguage;
+import com.example.iotalarmcopilot.rule.domain.model.RuleTriggeredResult;
+import com.example.iotalarmcopilot.rule.domain.model.TelemetryRuleFacts;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;

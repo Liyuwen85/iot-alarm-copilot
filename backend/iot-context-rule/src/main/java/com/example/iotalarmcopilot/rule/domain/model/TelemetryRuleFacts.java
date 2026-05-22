@@ -1,4 +1,4 @@
-package com.example.iotalarmcopilot.rule.domain;
+package com.example.iotalarmcopilot.rule.domain.model;
 
 import com.example.iotalarmcopilot.contract.telemetry.TelemetryMetricName;
 import com.example.iotalarmcopilot.contract.telemetry.TelemetryMetrics;
@@ -9,7 +9,6 @@ import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 
 /**
  * 遥测事件-领域计算输入模型
@@ -24,10 +23,6 @@ public record TelemetryRuleFacts(
         DeviceId deviceId,
         TelemetryMetrics metrics,
         Instant reportedAt) {
-
-    private static final Set<TelemetryMetricName> SUPPORTED_METRIC_NAMES = Set.of(
-            TelemetryMetricName.TEMPERATURE,
-            TelemetryMetricName.HUMIDITY);
 
     public static TelemetryRuleFacts fromTelemetryRecorded(
             Long telemetryEventId,
@@ -72,7 +67,7 @@ public record TelemetryRuleFacts(
     }
 
     public static boolean supportsMetricName(TelemetryMetricName metricName) {
-        return metricName != null && SUPPORTED_METRIC_NAMES.contains(metricName);
+        return metricName != null;
     }
 
     public BigDecimal metricValue(TelemetryMetricName metricName) {

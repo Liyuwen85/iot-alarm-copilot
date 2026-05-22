@@ -1,4 +1,4 @@
 /**
- * Domain layer for rule definitions, conditions, and trigger semantics.
+ * Rule domain root package.
  */
 package com.example.iotalarmcopilot.rule.domain;

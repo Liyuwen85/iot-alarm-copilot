@@ -1,7 +1,9 @@
-package com.example.iotalarmcopilot.rule.domain;
+package com.example.iotalarmcopilot.rule.domain.model;
 
 import com.example.iotalarmcopilot.contract.telemetry.TelemetryMetricName;
 import com.example.iotalarmcopilot.BaseDomainException;
+import com.example.iotalarmcopilot.rule.domain.policy.RuleStatusPolicy;
+import com.example.iotalarmcopilot.rule.domain.service.RuleExpressionEvaluator;
 
 import java.math.BigDecimal;
 import java.util.Objects;

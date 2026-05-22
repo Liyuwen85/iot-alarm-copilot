@@ -1,4 +1,4 @@
-package com.example.iotalarmcopilot.rule.domain;
+package com.example.iotalarmcopilot.rule.domain.model;
 
 import com.example.iotalarmcopilot.contract.telemetry.TelemetryMetricName;
 import com.example.iotalarmcopilot.rule.infrastructure.expression.spel.SpelRuleExpressionEvaluator;

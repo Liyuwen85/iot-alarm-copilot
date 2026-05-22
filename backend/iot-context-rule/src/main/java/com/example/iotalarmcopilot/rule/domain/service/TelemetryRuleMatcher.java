@@ -1,4 +1,8 @@
-package com.example.iotalarmcopilot.rule.domain;
+package com.example.iotalarmcopilot.rule.domain.service;
+
+import com.example.iotalarmcopilot.rule.domain.model.RuleDefinition;
+import com.example.iotalarmcopilot.rule.domain.model.RuleTriggeredResult;
+import com.example.iotalarmcopilot.rule.domain.model.TelemetryRuleFacts;
 
 import java.util.ArrayList;
 import java.util.List;

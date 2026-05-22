@@ -1,8 +1,8 @@
 package com.example.iotalarmcopilot.rule.infrastructure.config;
 
-import com.example.iotalarmcopilot.rule.domain.RuleDefinition;
-import com.example.iotalarmcopilot.rule.domain.RuleDefinitionRepository;
-import com.example.iotalarmcopilot.rule.domain.TelemetryRuleFacts;
+import com.example.iotalarmcopilot.rule.domain.model.RuleDefinition;
+import com.example.iotalarmcopilot.rule.domain.model.TelemetryRuleFacts;
+import com.example.iotalarmcopilot.rule.domain.repository.RuleDefinitionRepository;
 import com.example.iotalarmcopilot.rule.infrastructure.expression.spel.SpelRuleExpressionEvaluator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

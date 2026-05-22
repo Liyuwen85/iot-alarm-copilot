@@ -1,4 +1,4 @@
-package com.example.iotalarmcopilot.rule.domain;
+package com.example.iotalarmcopilot.rule.domain.model;
 
 /**
  * 支持的规则表达式语言

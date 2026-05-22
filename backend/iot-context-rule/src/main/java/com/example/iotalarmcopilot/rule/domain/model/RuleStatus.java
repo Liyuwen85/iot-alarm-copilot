@@ -1,4 +1,4 @@
-package com.example.iotalarmcopilot.rule.domain;
+package com.example.iotalarmcopilot.rule.domain.model;
 
 /**
  * 规则状态值对象
