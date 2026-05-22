@@ -2,6 +2,7 @@ package com.example.iotalarmcopilot.alarm.infrastructure.persistence;
 
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
@@ -91,12 +92,15 @@ public interface AlarmEventMapper {
 
     @Update("""
             UPDATE alarm_event
-            SET status = #{status},
-                acknowledged_at = #{acknowledgedAt},
-                closed_at = #{closedAt}
-            WHERE id = #{id}
+            SET status = #{record.status},
+                acknowledged_at = #{record.acknowledgedAt},
+                closed_at = #{record.closedAt}
+            WHERE id = #{record.id}
+              AND status = #{expectedStatus}
             """)
-    int updateStatus(AlarmRecord record);
+    int updateStatusIfCurrentStatusMatches(
+            @Param("record") AlarmRecord record,
+            @Param("expectedStatus") String expectedStatus);
 
     @Select("""
             SELECT

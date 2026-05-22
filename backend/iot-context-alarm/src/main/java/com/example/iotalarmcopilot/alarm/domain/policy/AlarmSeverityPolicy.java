@@ -1,4 +1,6 @@
-package com.example.iotalarmcopilot.alarm.domain;
+package com.example.iotalarmcopilot.alarm.domain.policy;
+
+import com.example.iotalarmcopilot.alarm.domain.model.AlarmSeverity;
 
 import java.util.Locale;
 

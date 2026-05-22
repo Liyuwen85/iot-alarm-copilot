@@ -1,9 +1,9 @@
 package com.example.iotalarmcopilot.alarm.infrastructure.persistence;
 
-import com.example.iotalarmcopilot.alarm.domain.Alarm;
-import com.example.iotalarmcopilot.alarm.domain.AlarmDedupKey;
-import com.example.iotalarmcopilot.alarm.domain.AlarmSeverity;
-import com.example.iotalarmcopilot.alarm.domain.AlarmStatus;
+import com.example.iotalarmcopilot.alarm.domain.model.Alarm;
+import com.example.iotalarmcopilot.alarm.domain.model.AlarmDedupKey;
+import com.example.iotalarmcopilot.alarm.domain.model.AlarmSeverity;
+import com.example.iotalarmcopilot.alarm.domain.model.AlarmStatus;
 import lombok.Data;
 
 import java.math.BigDecimal;

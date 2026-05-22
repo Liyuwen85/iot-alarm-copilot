@@ -1,4 +1,4 @@
-package com.example.iotalarmcopilot.alarm.domain;
+package com.example.iotalarmcopilot.alarm.domain.model;
 
 /**
  * 告警状态值枚举

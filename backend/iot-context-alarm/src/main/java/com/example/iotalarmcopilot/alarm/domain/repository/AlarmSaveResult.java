@@ -1,5 +1,6 @@
-package com.example.iotalarmcopilot.alarm.domain;
+package com.example.iotalarmcopilot.alarm.domain.repository;
 
+import com.example.iotalarmcopilot.alarm.domain.model.Alarm;
 import java.util.Objects;
 
 /**

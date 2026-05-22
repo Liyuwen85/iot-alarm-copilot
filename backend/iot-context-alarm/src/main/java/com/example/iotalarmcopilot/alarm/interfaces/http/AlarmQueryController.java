@@ -1,7 +1,7 @@
 package com.example.iotalarmcopilot.alarm.interfaces.http;
 
 import com.example.iotalarmcopilot.alarm.application.*;
-import com.example.iotalarmcopilot.alarm.domain.Alarm;
+import com.example.iotalarmcopilot.alarm.domain.model.Alarm;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;

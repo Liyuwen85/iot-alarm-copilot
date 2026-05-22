@@ -1,6 +1,9 @@
-package com.example.iotalarmcopilot.alarm.domain;
+package com.example.iotalarmcopilot.alarm.domain.model;
 
 import com.example.iotalarmcopilot.BaseDomainException;
+import com.example.iotalarmcopilot.alarm.domain.policy.AlarmDedupKeyPolicy;
+import com.example.iotalarmcopilot.alarm.domain.policy.AlarmSeverityPolicy;
+import com.example.iotalarmcopilot.alarm.domain.policy.AlarmStatusPolicy;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -10,7 +13,7 @@ import java.util.Objects;
  * 告警实体
  *
  * @param id
- * @param dedupKey
+ * @param dedupKey         防重键
  * @param ruleCode
  * @param telemetryEventId
  * @param deviceId

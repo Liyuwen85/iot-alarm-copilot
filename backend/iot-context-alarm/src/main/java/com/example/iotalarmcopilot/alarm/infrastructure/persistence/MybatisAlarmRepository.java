@@ -1,9 +1,11 @@
 package com.example.iotalarmcopilot.alarm.infrastructure.persistence;
 
 import com.example.iotalarmcopilot.BaseDomainException;
-import com.example.iotalarmcopilot.alarm.domain.Alarm;
-import com.example.iotalarmcopilot.alarm.domain.AlarmRepository;
-import com.example.iotalarmcopilot.alarm.domain.AlarmSaveResult;
+import com.example.iotalarmcopilot.alarm.domain.model.Alarm;
+import com.example.iotalarmcopilot.alarm.domain.model.AlarmStatus;
+import com.example.iotalarmcopilot.alarm.domain.repository.AlarmRepository;
+import com.example.iotalarmcopilot.alarm.domain.repository.AlarmSaveResult;
+import com.example.iotalarmcopilot.alarm.domain.repository.AlarmStatusUpdateResult;
 import org.springframework.stereotype.Repository;
 
 /**
@@ -42,12 +44,13 @@ public class MybatisAlarmRepository implements AlarmRepository {
     }
 
     @Override
-    public Alarm updateStatus(Alarm alarm) {
+    public AlarmStatusUpdateResult updateStatusIfCurrentStatusMatches(Alarm alarm, AlarmStatus expectedCurrentStatus) {
         AlarmRecord record = AlarmRecord.fromDomain(alarm);
-        int updatedRows = alarmEventMapper.updateStatus(record);
-        if (updatedRows != 1) {
-            throw new BaseDomainException("Failed to update alarm status. id=" + alarm.id());
+        int updatedRows = alarmEventMapper.updateStatusIfCurrentStatusMatches(record, expectedCurrentStatus.name());
+        Alarm latestAlarm = load(alarm.id());
+        if (updatedRows > 1) {
+            throw new BaseDomainException("Unexpected updated rows for alarm status transition. id=" + alarm.id());
         }
-        return load(alarm.id());
+        return new AlarmStatusUpdateResult(latestAlarm, updatedRows == 1);
     }
 }

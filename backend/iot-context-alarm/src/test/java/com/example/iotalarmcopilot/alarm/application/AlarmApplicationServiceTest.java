@@ -1,8 +1,10 @@
 package com.example.iotalarmcopilot.alarm.application;
 
-import com.example.iotalarmcopilot.alarm.domain.Alarm;
-import com.example.iotalarmcopilot.alarm.domain.AlarmRepository;
-import com.example.iotalarmcopilot.alarm.domain.AlarmSaveResult;
+import com.example.iotalarmcopilot.alarm.domain.model.Alarm;
+import com.example.iotalarmcopilot.alarm.domain.model.AlarmStatus;
+import com.example.iotalarmcopilot.alarm.domain.repository.AlarmRepository;
+import com.example.iotalarmcopilot.alarm.domain.repository.AlarmSaveResult;
+import com.example.iotalarmcopilot.alarm.domain.repository.AlarmStatusUpdateResult;
 import com.example.iotalarmcopilot.BaseDomainException;
 import com.example.iotalarmcopilot.contract.event.AlarmAcknowledgedEvent;
 import com.example.iotalarmcopilot.contract.event.AlarmClosedEvent;
@@ -107,7 +109,7 @@ class AlarmApplicationServiceTest {
         assertThrows(BaseDomainException.class, () ->
                 service.acknowledge(new AcknowledgeAlarmCommand(1L, Instant.parse("2026-05-13T10:06:00Z"))));
 
-        verify(repository, never()).updateStatus(any(Alarm.class));
+        verify(repository, never()).updateStatusIfCurrentStatusMatches(any(Alarm.class), any(AlarmStatus.class));
         verify(publisher, never()).publishEvent(any(AlarmAcknowledgedEvent.class));
     }
 
@@ -143,7 +145,8 @@ class AlarmApplicationServiceTest {
         Alarm closedAlarm = openAlarm.close(closedAt);
 
         when(repository.load(1L)).thenReturn(openAlarm);
-        when(repository.updateStatus(any(Alarm.class))).thenReturn(closedAlarm);
+        when(repository.updateStatusIfCurrentStatusMatches(any(Alarm.class), any(AlarmStatus.class)))
+                .thenReturn(new AlarmStatusUpdateResult(closedAlarm, true));
 
         service.close(new CloseAlarmCommand(1L, closedAt));
 
@@ -154,5 +157,46 @@ class AlarmApplicationServiceTest {
                 "dev-01",
                 openAlarm.severity().name(),
                 closedAt));
+    }
+
+    @Test
+    void should_not_publish_ack_event_when_status_was_changed_by_other_node() {
+        AlarmRepository repository = mock(AlarmRepository.class);
+        ApplicationEventPublisher publisher = mock(ApplicationEventPublisher.class);
+        AlarmApplicationService service = new AlarmApplicationService(repository, publisher);
+        Instant triggeredAt = Instant.parse("2026-05-13T10:00:00Z");
+        Instant acknowledgedAt = Instant.parse("2026-05-13T10:05:00Z");
+        Alarm openAlarm = Alarm.openFromRule(
+                "temperature_high",
+                101L,
+                "dev-01",
+                "temperature",
+                BigDecimal.valueOf(88),
+                BigDecimal.valueOf(80),
+                triggeredAt);
+        openAlarm = new Alarm(
+                1L,
+                openAlarm.dedupKey(),
+                openAlarm.ruleCode(),
+                openAlarm.telemetryEventId(),
+                openAlarm.deviceId(),
+                openAlarm.metricName(),
+                openAlarm.metricValue(),
+                openAlarm.threshold(),
+                openAlarm.severity(),
+                openAlarm.status(),
+                openAlarm.triggeredAt(),
+                openAlarm.acknowledgedAt(),
+                openAlarm.closedAt());
+        Alarm latestAlarm = openAlarm.close(Instant.parse("2026-05-13T10:06:00Z"));
+
+        when(repository.load(1L)).thenReturn(openAlarm);
+        when(repository.updateStatusIfCurrentStatusMatches(any(Alarm.class), any(AlarmStatus.class)))
+                .thenReturn(new AlarmStatusUpdateResult(latestAlarm, false));
+
+        Alarm result = service.acknowledge(new AcknowledgeAlarmCommand(1L, acknowledgedAt));
+
+        verify(publisher, never()).publishEvent(any(AlarmAcknowledgedEvent.class));
+        org.junit.jupiter.api.Assertions.assertEquals(AlarmStatus.CLOSED, result.status());
     }
 }

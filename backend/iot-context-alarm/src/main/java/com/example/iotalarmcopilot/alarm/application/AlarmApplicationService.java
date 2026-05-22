@@ -1,14 +1,16 @@
 package com.example.iotalarmcopilot.alarm.application;
 
-import com.example.iotalarmcopilot.alarm.domain.Alarm;
-import com.example.iotalarmcopilot.alarm.domain.AlarmRepository;
-import com.example.iotalarmcopilot.alarm.domain.AlarmSaveResult;
-import com.example.iotalarmcopilot.alarm.domain.AlarmStatus;
+import com.example.iotalarmcopilot.alarm.domain.model.Alarm;
+import com.example.iotalarmcopilot.alarm.domain.model.AlarmStatus;
+import com.example.iotalarmcopilot.alarm.domain.repository.AlarmRepository;
+import com.example.iotalarmcopilot.alarm.domain.repository.AlarmSaveResult;
+import com.example.iotalarmcopilot.alarm.domain.repository.AlarmStatusUpdateResult;
 import com.example.iotalarmcopilot.contract.event.AlarmAcknowledgedEvent;
 import com.example.iotalarmcopilot.contract.event.AlarmClosedEvent;
 import com.example.iotalarmcopilot.contract.event.AlarmCreatedEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 告警应用服务
@@ -32,6 +34,7 @@ public class AlarmApplicationService {
      * @param command
      * @return
      */
+    @Transactional
     public AlarmSaveResult createIfAbsent(CreateAlarmFromRuleCommand command) {
         Alarm alarm = Alarm.openFromRule(
                 command.ruleCode(),
@@ -54,11 +57,15 @@ public class AlarmApplicationService {
      * @param command
      * @return
      */
+    @Transactional
     public Alarm acknowledge(AcknowledgeAlarmCommand command) {
         Alarm currentAlarm = alarmRepository.load(command.alarmId());
         Alarm acknowledgedAlarm = currentAlarm.acknowledge(command.acknowledgedAt());
-        Alarm savedAlarm = alarmRepository.updateStatus(acknowledgedAlarm);
-        if (currentAlarm.status() != AlarmStatus.ACKED && savedAlarm.status() == AlarmStatus.ACKED) {
+        AlarmStatusUpdateResult updateResult = alarmRepository.updateStatusIfCurrentStatusMatches(
+                acknowledgedAlarm,
+                currentAlarm.status());
+        Alarm savedAlarm = updateResult.alarm();
+        if (updateResult.changed() && savedAlarm.status() == AlarmStatus.ACKED) {
             publishAcknowledged(savedAlarm);
         }
         return savedAlarm;
@@ -70,11 +77,15 @@ public class AlarmApplicationService {
      * @param command
      * @return
      */
+    @Transactional
     public Alarm close(CloseAlarmCommand command) {
         Alarm currentAlarm = alarmRepository.load(command.alarmId());
         Alarm closedAlarm = currentAlarm.close(command.closedAt());
-        Alarm savedAlarm = alarmRepository.updateStatus(closedAlarm);
-        if (currentAlarm.status() != AlarmStatus.CLOSED && savedAlarm.status() == AlarmStatus.CLOSED) {
+        AlarmStatusUpdateResult updateResult = alarmRepository.updateStatusIfCurrentStatusMatches(
+                closedAlarm,
+                currentAlarm.status());
+        Alarm savedAlarm = updateResult.alarm();
+        if (updateResult.changed() && savedAlarm.status() == AlarmStatus.CLOSED) {
             publishClosed(savedAlarm);
         }
         return savedAlarm;

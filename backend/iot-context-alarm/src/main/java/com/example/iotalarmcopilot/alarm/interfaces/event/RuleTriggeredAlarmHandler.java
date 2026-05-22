@@ -2,7 +2,7 @@ package com.example.iotalarmcopilot.alarm.interfaces.event;
 
 import com.example.iotalarmcopilot.alarm.application.AlarmApplicationService;
 import com.example.iotalarmcopilot.alarm.application.CreateAlarmFromRuleCommand;
-import com.example.iotalarmcopilot.alarm.domain.AlarmSaveResult;
+import com.example.iotalarmcopilot.alarm.domain.repository.AlarmSaveResult;
 import com.example.iotalarmcopilot.contract.event.RuleTriggeredEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
