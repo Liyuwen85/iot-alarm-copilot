@@ -15,6 +15,7 @@ public interface TelemetryEventMapper {
                 device_id,
                 temperature,
                 humidity,
+                metrics_json,
                 reported_at,
                 raw_json,
                 created_at
@@ -23,6 +24,7 @@ public interface TelemetryEventMapper {
                 #{deviceId},
                 #{temperature},
                 #{humidity},
+                #{metricsJson},
                 #{reportedAt},
                 #{rawJson},
                 CURRENT_TIMESTAMP
@@ -36,6 +38,7 @@ public interface TelemetryEventMapper {
                 device_id,
                 temperature,
                 humidity,
+                metrics_json,
                 reported_at,
                 raw_json
             FROM telemetry_event

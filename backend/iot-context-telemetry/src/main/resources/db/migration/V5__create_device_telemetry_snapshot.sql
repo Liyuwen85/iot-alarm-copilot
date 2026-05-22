@@ -3,6 +3,7 @@ CREATE TABLE device_telemetry_snapshot (
     last_telemetry_event_id BIGINT NOT NULL,
     temperature NUMERIC(10, 2) NULL,
     humidity NUMERIC(10, 2) NULL,
+    metrics_json TEXT NOT NULL,
     last_reported_at TIMESTAMP(3) WITH TIME ZONE NOT NULL,
     last_raw_json TEXT NOT NULL,
     created_at TIMESTAMP(3) WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,

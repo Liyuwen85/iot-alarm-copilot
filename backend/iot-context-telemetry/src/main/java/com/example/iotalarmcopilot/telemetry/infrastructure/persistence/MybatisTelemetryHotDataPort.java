@@ -44,6 +44,7 @@ public class MybatisTelemetryHotDataPort implements TelemetryHotDataPort {
                         record.getDeviceId(),
                         record.getTemperature(),
                         record.getHumidity(),
+                        record.getMetricsJson(),
                         record.getReportedAt(),
                         record.getRawJson()))
                 .toList();

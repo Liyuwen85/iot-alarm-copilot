@@ -8,7 +8,7 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * 遥测领域实体
+ * 遥测事件实体
  */
 public record TelemetryEvent(
         Long id,

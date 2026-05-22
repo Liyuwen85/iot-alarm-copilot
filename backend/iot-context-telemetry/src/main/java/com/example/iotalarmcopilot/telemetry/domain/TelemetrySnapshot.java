@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * 最近的设备遥测快照数据
+ * 最近一次的设备遥测快照数据（存储在业务数据库中，非时序库）
  */
 public record TelemetrySnapshot(
         DeviceId deviceId,

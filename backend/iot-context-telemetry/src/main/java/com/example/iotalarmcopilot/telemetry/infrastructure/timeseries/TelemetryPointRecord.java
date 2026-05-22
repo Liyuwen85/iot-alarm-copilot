@@ -2,13 +2,14 @@ package com.example.iotalarmcopilot.telemetry.infrastructure.timeseries;
 
 import com.example.iotalarmcopilot.telemetry.application.TelemetryEventVO;
 import com.example.iotalarmcopilot.telemetry.domain.TelemetryEvent;
+import com.example.iotalarmcopilot.telemetry.infrastructure.codec.TelemetryMetricsJsonCodec;
 import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 
 /**
- * TimescaleDB 中的遥测热点点位
+ * 遥测点记录TSDB
  */
 @Data
 public class TelemetryPointRecord {
@@ -17,6 +18,7 @@ public class TelemetryPointRecord {
     private String deviceId;
     private BigDecimal temperature;
     private BigDecimal humidity;
+    private String metricsJson;
     private Instant reportedAt;
     private String rawJson;
 
@@ -26,6 +28,7 @@ public class TelemetryPointRecord {
         record.setDeviceId(event.deviceId().value());
         record.setTemperature(event.temperature());
         record.setHumidity(event.humidity());
+        record.setMetricsJson(TelemetryMetricsJsonCodec.encode(event.metrics()));
         record.setReportedAt(event.reportedAt());
         record.setRawJson(event.rawJson());
         return record;
@@ -37,6 +40,7 @@ public class TelemetryPointRecord {
                 deviceId,
                 temperature,
                 humidity,
+                metricsJson,
                 reportedAt,
                 rawJson);
     }

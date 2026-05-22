@@ -1,15 +1,15 @@
 package com.example.iotalarmcopilot.telemetry.infrastructure.persistence;
 
-import com.example.iotalarmcopilot.contract.telemetry.TelemetryMetrics;
 import com.example.iotalarmcopilot.telemetry.domain.DeviceId;
 import com.example.iotalarmcopilot.telemetry.domain.TelemetryEvent;
+import com.example.iotalarmcopilot.telemetry.infrastructure.codec.TelemetryMetricsJsonCodec;
 import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 
 /**
- * 遥测数据持久化实体
+ * 遥测事件记录数据库实体
  */
 @Data
 public class TelemetryEventRecord {
@@ -18,6 +18,7 @@ public class TelemetryEventRecord {
     private String deviceId;
     private BigDecimal temperature;
     private BigDecimal humidity;
+    private String metricsJson;
     private Instant reportedAt;
     private String rawJson;
 
@@ -27,6 +28,7 @@ public class TelemetryEventRecord {
         record.setDeviceId(event.deviceId().value());
         record.setTemperature(event.temperature());
         record.setHumidity(event.humidity());
+        record.setMetricsJson(TelemetryMetricsJsonCodec.encode(event.metrics()));
         record.setReportedAt(event.reportedAt());
         record.setRawJson(event.rawJson());
         return record;
@@ -36,7 +38,7 @@ public class TelemetryEventRecord {
         return new TelemetryEvent(
                 id,
                 new DeviceId(deviceId),
-                TelemetryMetrics.ofTemperatureAndHumidity(temperature, humidity),
+                TelemetryMetricsJsonCodec.decode(metricsJson),
                 reportedAt,
                 rawJson);
     }

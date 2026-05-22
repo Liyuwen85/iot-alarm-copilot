@@ -22,12 +22,26 @@ public class TimescaleTelemetryInitializer {
                     device_id VARCHAR(64) NOT NULL,
                     temperature NUMERIC(10, 2) NULL,
                     humidity NUMERIC(10, 2) NULL,
+                    metrics_json TEXT NOT NULL,
                     reported_at TIMESTAMPTZ NOT NULL,
                     raw_json TEXT NOT NULL,
                     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                     UNIQUE (telemetry_event_id, reported_at)
                 )
                 """);
+        jdbcTemplate.execute("ALTER TABLE telemetry_point ADD COLUMN IF NOT EXISTS metrics_json TEXT");
+        jdbcTemplate.execute("""
+                UPDATE telemetry_point
+                SET metrics_json = COALESCE(
+                    metrics_json,
+                    jsonb_strip_nulls(jsonb_build_object(
+                        'temperature', temperature,
+                        'humidity', humidity
+                    ))::text
+                )
+                WHERE metrics_json IS NULL
+                """);
+        jdbcTemplate.execute("ALTER TABLE telemetry_point ALTER COLUMN metrics_json SET NOT NULL");
         jdbcTemplate.queryForObject(
                 "SELECT create_hypertable('telemetry_point', 'reported_at', if_not_exists => TRUE)",
                 String.class);

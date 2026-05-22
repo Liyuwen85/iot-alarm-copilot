@@ -1,6 +1,6 @@
 package com.example.iotalarmcopilot.telemetry.infrastructure.identity;
 
-import com.example.iotalarmcopilot.telemetry.domain.TelemetryEventIdGenerator;
+import com.example.iotalarmcopilot.telemetry.application.port.TelemetryEventIdGenerator;
 import org.springframework.stereotype.Component;
 
 import java.nio.ByteBuffer;
@@ -10,11 +10,12 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 
 /**
- * 生成唯一ID
+ * 模拟生成唯一ID
  */
 @Component
 public class Sha256TelemetryEventIdGenerator implements TelemetryEventIdGenerator {
 
+    // 分布式中最好用snowflake算法或uid生成
     @Override
     public Long nextId(String deviceId, Instant reportedAt, String rawJson) {
         byte[] source = (deviceId + "\n" + reportedAt + "\n" + rawJson)

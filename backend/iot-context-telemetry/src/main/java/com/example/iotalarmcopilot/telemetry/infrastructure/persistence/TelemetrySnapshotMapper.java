@@ -13,6 +13,7 @@ public interface TelemetrySnapshotMapper {
                 last_telemetry_event_id,
                 temperature,
                 humidity,
+                metrics_json,
                 last_reported_at,
                 last_raw_json,
                 created_at,
@@ -22,6 +23,7 @@ public interface TelemetrySnapshotMapper {
                 #{lastTelemetryEventId},
                 #{temperature},
                 #{humidity},
+                #{metricsJson},
                 #{lastReportedAt},
                 #{lastRawJson},
                 CURRENT_TIMESTAMP,
@@ -31,9 +33,15 @@ public interface TelemetrySnapshotMapper {
             SET last_telemetry_event_id = EXCLUDED.last_telemetry_event_id,
                 temperature = EXCLUDED.temperature,
                 humidity = EXCLUDED.humidity,
+                metrics_json = EXCLUDED.metrics_json,
                 last_reported_at = EXCLUDED.last_reported_at,
                 last_raw_json = EXCLUDED.last_raw_json,
                 updated_at = CURRENT_TIMESTAMP
+            WHERE EXCLUDED.last_reported_at > device_telemetry_snapshot.last_reported_at
+               OR (
+                    EXCLUDED.last_reported_at = device_telemetry_snapshot.last_reported_at
+                    AND EXCLUDED.last_telemetry_event_id >= device_telemetry_snapshot.last_telemetry_event_id
+               )
             """)
     int upsert(TelemetrySnapshotRecord record);
 
@@ -43,6 +51,7 @@ public interface TelemetrySnapshotMapper {
                 last_telemetry_event_id,
                 temperature,
                 humidity,
+                metrics_json,
                 last_reported_at,
                 last_raw_json
             FROM device_telemetry_snapshot

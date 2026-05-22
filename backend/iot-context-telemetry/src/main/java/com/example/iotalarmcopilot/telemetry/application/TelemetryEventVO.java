@@ -11,6 +11,7 @@ public record TelemetryEventVO(
         String deviceId,
         BigDecimal temperature,
         BigDecimal humidity,
+        String metricsJson,
         Instant reportedAt,
         String rawJson) {
 }

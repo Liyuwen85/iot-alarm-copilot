@@ -37,15 +37,17 @@ public class TimescaleTelemetryHotDataPort implements TelemetryHotDataPort {
                             device_id,
                             temperature,
                             humidity,
+                            metrics_json,
                             reported_at,
                             raw_json
-                        ) VALUES (?, ?, ?, ?, ?, ?)
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?)
                         ON CONFLICT (telemetry_event_id, reported_at) DO NOTHING
                         """,
                 record.getTelemetryEventId(),
                 record.getDeviceId(),
                 record.getTemperature(),
                 record.getHumidity(),
+                record.getMetricsJson(),
                 Timestamp.from(record.getReportedAt()),
                 record.getRawJson());
     }
@@ -58,6 +60,7 @@ public class TimescaleTelemetryHotDataPort implements TelemetryHotDataPort {
                             device_id,
                             temperature,
                             humidity,
+                            metrics_json,
                             reported_at,
                             raw_json
                         FROM telemetry_point
@@ -74,6 +77,7 @@ public class TimescaleTelemetryHotDataPort implements TelemetryHotDataPort {
         record.setDeviceId(resultSet.getString("device_id"));
         record.setTemperature(resultSet.getBigDecimal("temperature"));
         record.setHumidity(resultSet.getBigDecimal("humidity"));
+        record.setMetricsJson(resultSet.getString("metrics_json"));
         Timestamp reportedAt = resultSet.getTimestamp("reported_at");
         record.setReportedAt(reportedAt == null ? null : reportedAt.toInstant());
         record.setRawJson(resultSet.getString("raw_json"));

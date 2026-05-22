@@ -1,9 +1,9 @@
-package com.example.iotalarmcopilot.telemetry.domain;
+package com.example.iotalarmcopilot.telemetry.application.port;
 
 import java.time.Instant;
 
 /**
- * 生成遥测事件id
+ * 遥测事件id生成器
  */
 public interface TelemetryEventIdGenerator {
 

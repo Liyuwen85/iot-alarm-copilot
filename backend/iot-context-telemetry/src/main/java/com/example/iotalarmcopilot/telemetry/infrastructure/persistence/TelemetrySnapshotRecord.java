@@ -1,15 +1,15 @@
 package com.example.iotalarmcopilot.telemetry.infrastructure.persistence;
 
-import com.example.iotalarmcopilot.contract.telemetry.TelemetryMetrics;
 import com.example.iotalarmcopilot.telemetry.domain.DeviceId;
 import com.example.iotalarmcopilot.telemetry.domain.TelemetrySnapshot;
+import com.example.iotalarmcopilot.telemetry.infrastructure.codec.TelemetryMetricsJsonCodec;
 import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 
 /**
- * 快照记录持久化实体
+ * 遥测快照数据库实体
  */
 @Data
 public class TelemetrySnapshotRecord {
@@ -18,6 +18,7 @@ public class TelemetrySnapshotRecord {
     private Long lastTelemetryEventId;
     private BigDecimal temperature;
     private BigDecimal humidity;
+    private String metricsJson;
     private Instant lastReportedAt;
     private String lastRawJson;
 
@@ -27,6 +28,7 @@ public class TelemetrySnapshotRecord {
         record.setLastTelemetryEventId(snapshot.lastTelemetryEventId());
         record.setTemperature(snapshot.temperature());
         record.setHumidity(snapshot.humidity());
+        record.setMetricsJson(TelemetryMetricsJsonCodec.encode(snapshot.metrics()));
         record.setLastReportedAt(snapshot.lastReportedAt());
         record.setLastRawJson(snapshot.lastRawJson());
         return record;
@@ -36,7 +38,7 @@ public class TelemetrySnapshotRecord {
         return new TelemetrySnapshot(
                 new DeviceId(deviceId),
                 lastTelemetryEventId,
-                TelemetryMetrics.ofTemperatureAndHumidity(temperature, humidity),
+                TelemetryMetricsJsonCodec.decode(metricsJson),
                 lastReportedAt,
                 lastRawJson);
     }
