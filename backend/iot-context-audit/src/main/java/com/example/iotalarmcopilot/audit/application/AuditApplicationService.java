@@ -3,6 +3,7 @@ package com.example.iotalarmcopilot.audit.application;
 import com.example.iotalarmcopilot.audit.domain.AuditLogEntry;
 import com.example.iotalarmcopilot.audit.domain.AuditLogRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 审计应用服务
@@ -22,6 +23,7 @@ public class AuditApplicationService {
      * @param command
      * @return
      */
+    @Transactional
     public AuditLogEntry record(RecordAuditLogCommand command) {
         AuditLogEntry entry = AuditLogEntry.record(
                 command.eventType(),
@@ -30,6 +32,6 @@ public class AuditApplicationService {
                 command.deviceId(),
                 command.payloadJson(),
                 command.occurredAt());
-        return auditLogRepository.save(entry);
+        return auditLogRepository.saveIfAbsent(entry);
     }
 }

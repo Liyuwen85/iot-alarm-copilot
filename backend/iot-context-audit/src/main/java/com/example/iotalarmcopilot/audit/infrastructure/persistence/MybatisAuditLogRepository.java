@@ -5,6 +5,9 @@ import com.example.iotalarmcopilot.audit.domain.AuditLogRepository;
 import com.example.iotalarmcopilot.BaseDomainException;
 import org.springframework.stereotype.Repository;
 
+/**
+ * MyBatis 实现的审计日志存储仓库
+ */
 @Repository
 public class MybatisAuditLogRepository implements AuditLogRepository {
 
@@ -15,12 +18,17 @@ public class MybatisAuditLogRepository implements AuditLogRepository {
     }
 
     @Override
-    public AuditLogEntry save(AuditLogEntry entry) {
+    public AuditLogEntry saveIfAbsent(AuditLogEntry entry) {
         AuditLogRecord record = AuditLogRecord.fromDomain(entry);
-        int insertedRows = auditLogMapper.insert(record);
-        if (insertedRows != 1) {
-            throw new BaseDomainException("Failed to persist audit log");
+        auditLogMapper.insertIgnore(record);
+        AuditLogRecord savedRecord = auditLogMapper.selectOne(
+                record.getEventType(),
+                record.getAggregateType(),
+                record.getAggregateId(),
+                record.getOccurredAt());
+        if (savedRecord == null) {
+            throw new BaseDomainException("Failed to persist or load audit log");
         }
-        return record.toDomain();
+        return savedRecord.toDomain();
     }
 }

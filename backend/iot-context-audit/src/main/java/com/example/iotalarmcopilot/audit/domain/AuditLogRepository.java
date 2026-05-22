@@ -5,5 +5,5 @@ package com.example.iotalarmcopilot.audit.domain;
  */
 public interface AuditLogRepository {
 
-    AuditLogEntry save(AuditLogEntry entry);
+    AuditLogEntry saveIfAbsent(AuditLogEntry entry);
 }
