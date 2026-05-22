@@ -42,6 +42,7 @@ public class KafkaTelemetryConsumer {
                     envelope.topic(),
                     envelope.payload(),
                     exception);
+            throw exception;
         }
     }
 }

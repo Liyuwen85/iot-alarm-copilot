@@ -1,6 +1,9 @@
-package com.example.iotalarmcopilot.access.domain;
+package com.example.iotalarmcopilot.access.application;
 
 import com.example.iotalarmcopilot.BaseDomainException;
+import com.example.iotalarmcopilot.access.application.model.TelemetryMessage;
+import com.example.iotalarmcopilot.access.application.model.TelemetryPayload;
+import com.example.iotalarmcopilot.access.application.model.TelemetryTopic;
 
 /**
  * 接入层归一化策略
@@ -8,7 +11,10 @@ import com.example.iotalarmcopilot.BaseDomainException;
 public class TelemetryIngressPolicy {
 
     public TelemetryPayload normalize(String topic, TelemetryMessage message) {
-        TelemetryTopic telemetryTopic = new TelemetryTopic(topic);
+        return normalize(new TelemetryTopic(topic), message);
+    }
+
+    public TelemetryPayload normalize(TelemetryTopic telemetryTopic, TelemetryMessage message) {
         String topicDeviceId = telemetryTopic.deviceId();
         validatePayloadDeviceId(topicDeviceId, message.deviceId());
         return new TelemetryPayload(

@@ -1,4 +1,4 @@
-package com.example.iotalarmcopilot.access.domain;
+package com.example.iotalarmcopilot.access.application.model;
 
 import com.example.iotalarmcopilot.BaseDomainException;
 

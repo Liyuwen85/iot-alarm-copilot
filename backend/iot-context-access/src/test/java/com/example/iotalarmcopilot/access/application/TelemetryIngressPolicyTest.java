@@ -1,5 +1,7 @@
-package com.example.iotalarmcopilot.access.domain;
+package com.example.iotalarmcopilot.access.application;
 
+import com.example.iotalarmcopilot.access.application.model.TelemetryMessage;
+import com.example.iotalarmcopilot.access.application.model.TelemetryPayload;
 import com.example.iotalarmcopilot.contract.telemetry.TelemetryMetrics;
 import com.example.iotalarmcopilot.BaseDomainException;
 import org.junit.jupiter.api.Test;
