@@ -47,6 +47,11 @@ public record TelemetryMetrics(Map<TelemetryMetricName, BigDecimal> values) {
         return valueOf(TelemetryMetricName.HUMIDITY);
     }
 
+    /**
+     * 扁平结构
+     *
+     * @return
+     */
     public Map<String, BigDecimal> toFlatMap() {
         Map<String, BigDecimal> flatMap = new LinkedHashMap<>();
         for (Map.Entry<TelemetryMetricName, BigDecimal> entry : values.entrySet()) {

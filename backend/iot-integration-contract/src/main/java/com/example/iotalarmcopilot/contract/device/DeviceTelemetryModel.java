@@ -3,6 +3,9 @@ package com.example.iotalarmcopilot.contract.device;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * 设备遥测模型
+ */
 public record DeviceTelemetryModel(
         String deviceCode,
         String productCode,

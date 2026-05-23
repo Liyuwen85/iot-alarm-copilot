@@ -6,7 +6,7 @@ import java.util.Locale;
 import java.util.Objects;
 
 /**
- * 遥测度量名称
+ * 遥测基础指标名称
  *
  * @param value
  */
