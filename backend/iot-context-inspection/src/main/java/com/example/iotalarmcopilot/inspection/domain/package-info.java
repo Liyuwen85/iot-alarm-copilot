@@ -1,4 +1,4 @@
 /**
- * Domain layer for inspection suggestions, tickets, and handling semantics.
+ * Inspection domain root package.
  */
 package com.example.iotalarmcopilot.inspection.domain;
