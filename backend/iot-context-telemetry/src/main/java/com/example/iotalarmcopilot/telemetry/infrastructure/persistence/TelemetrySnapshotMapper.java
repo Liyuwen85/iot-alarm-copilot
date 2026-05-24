@@ -7,6 +7,12 @@ import org.apache.ibatis.annotations.Select;
 @Mapper
 public interface TelemetrySnapshotMapper {
 
+    /**
+     * 插入或更新设备遥测快照。另外保证数据的一致性和正确性
+     *
+     * @param record 设备遥测快照记录
+     * @return 影响行数
+     */
     @Insert("""
             INSERT INTO device_telemetry_snapshot (
                 device_id,

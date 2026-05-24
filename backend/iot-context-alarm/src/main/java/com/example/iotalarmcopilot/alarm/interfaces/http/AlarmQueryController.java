@@ -30,14 +30,14 @@ public class AlarmQueryController {
     }
 
     @PostMapping("/{alarmId}/ack")
-    public AlarmVO acknowledge(@PathVariable Long alarmId) {
+    public AlarmVO acknowledge(@PathVariable("alarmId") Long alarmId) {
         Alarm alarm = alarmApplicationService.acknowledge(
                 new AcknowledgeAlarmCommand(alarmId, Instant.now()));
         return toVO(alarm);
     }
 
     @PostMapping("/{alarmId}/close")
-    public AlarmVO close(@PathVariable Long alarmId) {
+    public AlarmVO close(@PathVariable("alarmId") Long alarmId) {
         Alarm alarm = alarmApplicationService.close(
                 new CloseAlarmCommand(alarmId, Instant.now()));
         return toVO(alarm);

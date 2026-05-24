@@ -2,6 +2,7 @@ package com.example.iotalarmcopilot.access.infrastructure.persistence;
 
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
@@ -61,7 +62,10 @@ public interface AccessDeadLetterMapper {
               AND original_partition = #{originalPartition}
               AND original_offset = #{originalOffset}
             """)
-    AccessDeadLetterRecord selectOne(String originalTopic, Integer originalPartition, Long originalOffset);
+    AccessDeadLetterRecord selectOne(
+            @Param("originalTopic") String originalTopic,
+            @Param("originalPartition") Integer originalPartition,
+            @Param("originalOffset") Long originalOffset);
 
     @Select("""
             SELECT
@@ -82,5 +86,5 @@ public interface AccessDeadLetterMapper {
             ORDER BY id DESC
             LIMIT #{limit}
             """)
-    List<AccessDeadLetterRecord> selectRecent(int limit);
+    List<AccessDeadLetterRecord> selectRecent(@Param("limit") int limit);
 }

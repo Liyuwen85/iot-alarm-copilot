@@ -36,37 +36,37 @@ public class DeviceController {
     }
 
     @PostMapping("/{deviceCode}/activate")
-    public DeviceVO activate(@PathVariable String deviceCode) {
+    public DeviceVO activate(@PathVariable("deviceCode") String deviceCode) {
         Device device = deviceApplicationService.activate(new ActivateDeviceCommand(deviceCode, Instant.now()));
         return deviceQueryApplicationService.toVO(device);
     }
 
     @PostMapping("/{deviceCode}/maintenance/start")
-    public DeviceVO startMaintenance(@PathVariable String deviceCode) {
+    public DeviceVO startMaintenance(@PathVariable("deviceCode") String deviceCode) {
         Device device = deviceApplicationService.startMaintenance(new StartMaintenanceCommand(deviceCode, Instant.now()));
         return deviceQueryApplicationService.toVO(device);
     }
 
     @PostMapping("/{deviceCode}/maintenance/finish")
-    public DeviceVO finishMaintenance(@PathVariable String deviceCode) {
+    public DeviceVO finishMaintenance(@PathVariable("deviceCode") String deviceCode) {
         Device device = deviceApplicationService.finishMaintenance(new FinishMaintenanceCommand(deviceCode, Instant.now()));
         return deviceQueryApplicationService.toVO(device);
     }
 
     @PostMapping("/{deviceCode}/disable")
-    public DeviceVO disable(@PathVariable String deviceCode) {
+    public DeviceVO disable(@PathVariable("deviceCode") String deviceCode) {
         Device device = deviceApplicationService.disable(new DisableDeviceCommand(deviceCode, Instant.now()));
         return deviceQueryApplicationService.toVO(device);
     }
 
     @PostMapping("/{deviceCode}/retire")
-    public DeviceVO retire(@PathVariable String deviceCode) {
+    public DeviceVO retire(@PathVariable("deviceCode") String deviceCode) {
         Device device = deviceApplicationService.retire(new RetireDeviceCommand(deviceCode, Instant.now()));
         return deviceQueryApplicationService.toVO(device);
     }
 
     @PostMapping("/{deviceCode}/group")
-    public DeviceVO changeGroup(@PathVariable String deviceCode, @RequestBody ChangeGroupRequest request) {
+    public DeviceVO changeGroup(@PathVariable("deviceCode") String deviceCode, @RequestBody ChangeGroupRequest request) {
         Device device = deviceApplicationService.changeGroup(new ChangeDeviceGroupCommand(
                 deviceCode,
                 request.groupCode(),
@@ -75,7 +75,7 @@ public class DeviceController {
     }
 
     @PostMapping("/{deviceCode}/shadow")
-    public DeviceVO updateShadow(@PathVariable String deviceCode, @RequestBody UpdateShadowRequest request) {
+    public DeviceVO updateShadow(@PathVariable("deviceCode") String deviceCode, @RequestBody UpdateShadowRequest request) {
         Device device = deviceApplicationService.updateShadow(new UpdateDeviceShadowCommand(
                 deviceCode,
                 request.shadowDocument(),
@@ -84,7 +84,7 @@ public class DeviceController {
     }
 
     @GetMapping("/{deviceCode}")
-    public DeviceVO get(@PathVariable String deviceCode) {
+    public DeviceVO get(@PathVariable("deviceCode") String deviceCode) {
         return deviceQueryApplicationService.get(deviceCode);
     }
 

@@ -28,7 +28,7 @@ public class ProductModelController {
     }
 
     @GetMapping("/{productCode}")
-    public ProductModelVO get(@PathVariable String productCode) {
+    public ProductModelVO get(@PathVariable("productCode") String productCode) {
         return productModelQueryApplicationService.get(productCode);
     }
 }

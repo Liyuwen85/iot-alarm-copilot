@@ -1,6 +1,13 @@
 spring:
   application:
     name: iot-platform-boot
+  ai:
+    openai:
+      api-key: ${MY_OPENAI_API_KEY:}
+      base-url: ${MY_OPENAI_BASE_URL:https://api.openai.com}
+      chat:
+        options:
+          model: ${OPENAI_MODEL:gpt-5.4}
   datasource:
     url: jdbc:postgresql://localhost:5432/iot_alarm_copilot
     username: postgres
@@ -10,11 +17,18 @@ spring:
   kafka:
     bootstrap-servers: localhost:9092
     consumer:
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      key-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
       properties:
+        spring.deserializer.key.delegate.class: org.apache.kafka.common.serialization.StringDeserializer
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
         spring.json.trusted.packages: "com.example.iotalarmcopilot.access.interfaces.kafka"
         spring.json.value.default.type: "com.example.iotalarmcopilot.access.interfaces.kafka.KafkaTelemetryEnvelope"
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    listener:
+      ack-mode: record
 
 server:
   port: 8080
@@ -26,8 +40,12 @@ management:
         include: health,info,metrics
 
 iot:
-  mqtt:
+  ai:
     enabled: true
+    model: ${OPENAI_MODEL:gpt-5.4}
+    prompt-version: alarm-summary-v1
+  mqtt:
+    enabled: false
     broker-url: tcp://localhost:1883
     client-id: iot-platform-backend
     inbound-topic: iot/+/telemetry
@@ -36,6 +54,12 @@ iot:
     enabled: true
     telemetry-topic: iot.telemetry.raw
     consumer-group: iot-platform-access
+    dead-letter-topic: iot.telemetry.raw.dlt
+    retry:
+      max-retries: 3
+      initial-interval-ms: 1000
+      multiplier: 2.0
+      max-interval-ms: 10000
   timeseries:
     enabled: true
     url: jdbc:postgresql://localhost:5432/iot_telemetry_hot
@@ -62,12 +86,3 @@ iot:
         metric-name: humidity
         threshold: 90
         expression: "humidity != null and humidity >= 90"
-
-# Reserved for future Spring Cloud Alibaba migration.
-# spring:
-#   cloud:
-#     nacos:
-#       config:
-#         server-addr: localhost:8848
-#       discovery:
-#         server-addr: localhost:8848

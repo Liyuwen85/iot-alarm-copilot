@@ -72,5 +72,5 @@ public interface AuditLogMapper {
             ORDER BY occurred_at DESC, id DESC
             LIMIT #{limit}
             """)
-    List<AuditLogRecord> selectRecent(int limit);
+    List<AuditLogRecord> selectRecent(@Param("limit") int limit);
 }
