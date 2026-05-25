@@ -26,7 +26,7 @@
 ```
 
 ## 当前状态
-
+![本地运行](./iot-alarm-copilot.png)
 ![本地运行](./mockdevice_mqttbridge_backend.png)
 
 当前已完成：
