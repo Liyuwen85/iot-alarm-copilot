@@ -86,11 +86,6 @@ function Ensure-BackendDatastoresReady {
     }
 }
 
-if (-not [string]::IsNullOrWhiteSpace($MavenRepo)) {
-    $installArguments = @("-Dmaven.repo.local=$MavenRepo") + $installArguments
-    $runArguments = @("-Dmaven.repo.local=$MavenRepo") + $runArguments
-}
-
 Ensure-BackendDatastoresReady
 
 Push-Location $backendRoot

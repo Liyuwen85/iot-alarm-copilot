@@ -10,7 +10,7 @@
     
 -   `DDD 上下文边界`
     
--   `Spring Cloud Alibaba Ready`
+-   `Spring Cloud Alibaba （准备，后面可以按context模块直接拆分为微服务）`
     
 
 ## 当前骨架
@@ -19,23 +19,18 @@
 .
 ├─ backend/                  # Java 后端多模块骨架
 ├─ docker/                   # 依赖镜像
-├─ docs/                     # 设计文档与架构图
 ├─ mock-device/              # Java Mock Device 骨架
+├─ mqtt-kafka-bridge/        # 将本地mosquitto的MQTT消息转发到kafka中，backend就可以直接消费kafka
 ├─ scripts/                  # 启动与初始化脚本
 └─ README.md
 ```
 
 ## 当前状态
 
-![本地运行](./mockdevice_mqttbridge_backend.png)
+![本地运行](file:///E:/work/IoT-project/code/mockdevice_mqttbridge_backend.png)
 
-当前完成：
+当前已完成：
 
 -   跑通了 mock device --> broker --> (mqtt\_kafka\_bridge) --> kafka --> backend --> postgresql (RDBMS and TSDB)
     
 -   启动参考 [RUN-LOCAL](RUN-LOCAL.md)
-    
-
-下一步继续做：
-
-1.  接 AI 摘要

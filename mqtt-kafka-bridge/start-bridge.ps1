@@ -21,7 +21,7 @@ $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $jarPath = Join-Path $scriptDir "target\mqtt-kafka-bridge-0.1.0-SNAPSHOT-all.jar"
 
 if (-not (Test-Path $jarPath)) {
-    throw "Bridge jar not found: $jarPath . Run 'mvn -Dmaven.repo.local=.m2repo -DskipTests package' first."
+    throw "Bridge jar not found: $jarPath . Run 'mvn -DskipTests package' first."
 }
 
 $env:BRIDGE_MQTT_CLIENT_ID = "mqtt-kafka-bridge-$NodeId"

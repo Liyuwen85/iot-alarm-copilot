@@ -21,10 +21,6 @@ $arguments = @(
     "exec:java"
 )
 
-if (-not [string]::IsNullOrWhiteSpace($MavenRepo)) {
-    $arguments = @("-Dmaven.repo.local=$MavenRepo") + $arguments
-}
-
 Push-Location $bridgeRoot
 try {
     & mvn @arguments
