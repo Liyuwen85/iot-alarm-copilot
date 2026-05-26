@@ -24,6 +24,10 @@ public class MybatisTelemetrySnapshotRepository implements TelemetrySnapshotRepo
     public void save(TelemetrySnapshot snapshot) {
         int affectedRows = telemetrySnapshotMapper.upsert(TelemetrySnapshotRecord.fromDomain(snapshot));
         if (affectedRows < 1) {
+            Optional<TelemetrySnapshot> existing = findByDeviceId(snapshot.deviceId());
+            if (existing.isPresent() && !existing.get().lastReportedAt().isBefore(snapshot.lastReportedAt())) {
+                return;
+            }
             throw new BaseDomainException("Failed to persist telemetry snapshot");
         }
     }

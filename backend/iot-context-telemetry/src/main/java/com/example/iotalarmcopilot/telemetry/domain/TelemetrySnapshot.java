@@ -44,14 +44,17 @@ public record TelemetrySnapshot(
         if (!deviceId.equals(event.deviceId())) {
             throw new BaseDomainException("Telemetry snapshot device mismatch");
         }
-        if (isOlderThan(event)) {
+        if (event.reportedAt().isBefore(lastReportedAt)) {
             return this;
         }
+        Long nextEventId = event.reportedAt().equals(lastReportedAt)
+                ? Math.max(lastTelemetryEventId, event.id())
+                : event.id();
         return new TelemetrySnapshot(
                 deviceId,
-                event.id(),
+                nextEventId,
                 mergeMetrics(event.metrics()),
-                event.reportedAt(),
+                event.reportedAt().isAfter(lastReportedAt) ? event.reportedAt() : lastReportedAt,
                 event.rawJson());
     }
 
@@ -72,11 +75,6 @@ public record TelemetrySnapshot(
 
     public BigDecimal humidity() {
         return metrics.humidity();
-    }
-
-    private boolean isOlderThan(TelemetryEvent event) {
-        return event.reportedAt().isBefore(lastReportedAt)
-                || (event.reportedAt().equals(lastReportedAt) && event.id() < lastTelemetryEventId);
     }
 
     private TelemetryMetrics mergeMetrics(TelemetryMetrics incoming) {

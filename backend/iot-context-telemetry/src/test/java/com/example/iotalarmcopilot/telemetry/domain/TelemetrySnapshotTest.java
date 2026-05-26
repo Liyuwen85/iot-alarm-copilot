@@ -53,4 +53,27 @@ class TelemetrySnapshotTest {
         assertEquals("60.2", snapshot.humidity().toPlainString());
         assertEquals(20L, snapshot.lastTelemetryEventId());
     }
+
+    @Test
+    void should_merge_same_timestamp_metrics_even_when_incoming_event_id_is_smaller() {
+        Instant reportedAt = Instant.parse("2026-05-14T10:01:00Z");
+        TelemetryEvent latest = TelemetryEvent.record(
+                20L,
+                "dev-01",
+                TelemetryMetrics.ofTemperatureAndHumidity(BigDecimal.valueOf(21.5), null),
+                reportedAt,
+                "{\"temperature\":21.5}");
+        TelemetryEvent sameTimestamp = TelemetryEvent.record(
+                19L,
+                "dev-01",
+                TelemetryMetrics.ofTemperatureAndHumidity(null, BigDecimal.valueOf(60.2)),
+                reportedAt,
+                "{\"humidity\":60.2}");
+
+        TelemetrySnapshot snapshot = TelemetrySnapshot.capture(latest).refreshBy(sameTimestamp);
+
+        assertEquals("21.5", snapshot.temperature().toPlainString());
+        assertEquals("60.2", snapshot.humidity().toPlainString());
+        assertEquals(20L, snapshot.lastTelemetryEventId());
+    }
 }

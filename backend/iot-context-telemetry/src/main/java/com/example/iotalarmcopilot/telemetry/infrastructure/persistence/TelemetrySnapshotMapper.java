@@ -36,18 +36,46 @@ public interface TelemetrySnapshotMapper {
                 CURRENT_TIMESTAMP
             )
             ON CONFLICT (device_id) DO UPDATE
-            SET last_telemetry_event_id = EXCLUDED.last_telemetry_event_id,
-                temperature = EXCLUDED.temperature,
-                humidity = EXCLUDED.humidity,
-                metrics_json = EXCLUDED.metrics_json,
-                last_reported_at = EXCLUDED.last_reported_at,
-                last_raw_json = EXCLUDED.last_raw_json,
+            SET last_telemetry_event_id = CASE
+                    WHEN EXCLUDED.last_reported_at > device_telemetry_snapshot.last_reported_at
+                        THEN EXCLUDED.last_telemetry_event_id
+                    WHEN EXCLUDED.last_reported_at = device_telemetry_snapshot.last_reported_at
+                        THEN GREATEST(EXCLUDED.last_telemetry_event_id, device_telemetry_snapshot.last_telemetry_event_id)
+                    ELSE device_telemetry_snapshot.last_telemetry_event_id
+                END,
+                temperature = CASE
+                    WHEN EXCLUDED.last_reported_at > device_telemetry_snapshot.last_reported_at
+                        THEN EXCLUDED.temperature
+                    WHEN EXCLUDED.last_reported_at = device_telemetry_snapshot.last_reported_at
+                        THEN COALESCE(EXCLUDED.temperature, device_telemetry_snapshot.temperature)
+                    ELSE device_telemetry_snapshot.temperature
+                END,
+                humidity = CASE
+                    WHEN EXCLUDED.last_reported_at > device_telemetry_snapshot.last_reported_at
+                        THEN EXCLUDED.humidity
+                    WHEN EXCLUDED.last_reported_at = device_telemetry_snapshot.last_reported_at
+                        THEN COALESCE(EXCLUDED.humidity, device_telemetry_snapshot.humidity)
+                    ELSE device_telemetry_snapshot.humidity
+                END,
+                metrics_json = CASE
+                    WHEN EXCLUDED.last_reported_at > device_telemetry_snapshot.last_reported_at
+                        THEN EXCLUDED.metrics_json
+                    WHEN EXCLUDED.last_reported_at = device_telemetry_snapshot.last_reported_at
+                        THEN ((device_telemetry_snapshot.metrics_json)::jsonb || (EXCLUDED.metrics_json)::jsonb)::text
+                    ELSE device_telemetry_snapshot.metrics_json
+                END,
+                last_reported_at = CASE
+                    WHEN EXCLUDED.last_reported_at > device_telemetry_snapshot.last_reported_at
+                        THEN EXCLUDED.last_reported_at
+                    ELSE device_telemetry_snapshot.last_reported_at
+                END,
+                last_raw_json = CASE
+                    WHEN EXCLUDED.last_reported_at >= device_telemetry_snapshot.last_reported_at
+                        THEN EXCLUDED.last_raw_json
+                    ELSE device_telemetry_snapshot.last_raw_json
+                END,
                 updated_at = CURRENT_TIMESTAMP
-            WHERE EXCLUDED.last_reported_at > device_telemetry_snapshot.last_reported_at
-               OR (
-                    EXCLUDED.last_reported_at = device_telemetry_snapshot.last_reported_at
-                    AND EXCLUDED.last_telemetry_event_id >= device_telemetry_snapshot.last_telemetry_event_id
-               )
+            WHERE EXCLUDED.last_reported_at >= device_telemetry_snapshot.last_reported_at
             """)
     int upsert(TelemetrySnapshotRecord record);
 
