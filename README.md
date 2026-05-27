@@ -26,6 +26,7 @@
 ```
 
 ## 当前状态
+
 ![本地运行](./iot-alarm-copilot.png)
 ![本地运行](./mockdevice_mqttbridge_backend.png)
 
@@ -34,3 +35,12 @@
 -   跑通了 mock device --> broker --> (mqtt\_kafka\_bridge) --> kafka --> backend --> postgresql (RDBMS and TSDB)
     
 -   启动参考 [RUN-LOCAL](RUN-LOCAL.md)
+    
+
+## 下一步计划：
+
+跑通下行链路
+
+Command context --> Broker --> Gateway(device-001) --> device-002
+
+其中 device-002用 Linux c来实现，集成lwM2M、Modbus、及演示数据。
