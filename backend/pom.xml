@@ -16,6 +16,7 @@
         <module>iot-integration-contract</module>
         <module>iot-persistence-support</module>
         <module>iot-context-access</module>
+        <module>iot-context-command</module>
         <module>iot-context-device</module>
         <module>iot-context-telemetry</module>
         <module>iot-context-rule</module>
