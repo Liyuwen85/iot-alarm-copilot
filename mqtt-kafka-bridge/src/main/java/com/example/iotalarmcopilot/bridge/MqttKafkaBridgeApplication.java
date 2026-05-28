@@ -5,7 +5,12 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringSerializer;
-import org.eclipse.paho.client.mqttv3.*;
+import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
+import org.eclipse.paho.client.mqttv3.MqttCallbackExtended;
+import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.eclipse.paho.client.mqttv3.MqttException;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
 import java.nio.charset.StandardCharsets;
@@ -14,14 +19,14 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Broker --> Kafka (--> Backend)
- * 没找到Mosquitto官方的kafka支持，就写了此工程（生产环境可用EMQX，就不需要此工程）
+ * 把Mosquitto的MQTT消息放入到Kafka中
  */
 public final class MqttKafkaBridgeApplication {
 
-    // format: iot/deviceId/telemetry
     private static final String TOPIC_PREFIX = "iot";
-    private static final String TOPIC_SUFFIX = "telemetry";
+    private static final String TELEMETRY_SUFFIX = "telemetry";
+    private static final String DEVICE_SEGMENT = "device";
+    private static final String COMMAND_ACK_SUFFIX = "command-acks";
 
     private MqttKafkaBridgeApplication() {
     }
@@ -31,14 +36,15 @@ public final class MqttKafkaBridgeApplication {
         ObjectMapper objectMapper = new ObjectMapper();
 
         while (true) {
+            // 未开启HA，就运行一次
             if (!config.leaderElectionEnabled()) {
                 runBridge(config, objectMapper);
                 return;
             }
 
-            // 使用postgresql来做HA
-            // leader选举
+            // 开启HA后
             try (PostgresLeaderElector leaderElector = new PostgresLeaderElector(config)) {
+                // 获取锁
                 boolean acquired = leaderElector.tryAcquire();
                 if (!acquired) {
                     System.out.printf("bridge standby waiting for leader lock key=%s retryMs=%s%n",
@@ -64,34 +70,35 @@ public final class MqttKafkaBridgeApplication {
         runBridge(config, objectMapper, null);
     }
 
+    /**
+     * 运行桥接程序
+     */
     private static void runBridge(
             BridgeConfig config,
             ObjectMapper objectMapper,
             PostgresLeaderElector leaderElector) throws Exception {
         CountDownLatch running = new CountDownLatch(1);
 
+        // kafka配置
         Properties kafkaProperties = new Properties();
         kafkaProperties.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, config.kafkaBootstrapServers());
         kafkaProperties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         kafkaProperties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         kafkaProperties.put(ProducerConfig.ACKS_CONFIG, "all");
 
-        // kafka producer，注册到MQTT client
+        // kafka生产者
         try (KafkaProducer<String, String> producer = new KafkaProducer<>(kafkaProperties);
+             // MQTT客户端
              MqttClient mqttClient = new MqttClient(
                      config.mqttBrokerUrl(),
                      config.mqttClientId(),
                      new MemoryPersistence())) {
-
+            // 回调处理
             mqttClient.setCallback(new MqttCallbackExtended() {
                 @Override
                 public void connectComplete(boolean reconnect, String serverURI) {
                     try {
-                        // 订阅
-                        mqttClient.subscribe(config.mqttTopicFilter(), config.mqttQos());
-                        System.out.printf("bridge subscribed topicFilter=%s reconnect=%s%n",
-                                config.mqttTopicFilter(),
-                                reconnect);
+                        subscribeAll(mqttClient, config);
                     } catch (MqttException exception) {
                         throw new IllegalStateException("failed to subscribe mqtt topic filter", exception);
                     }
@@ -105,16 +112,17 @@ public final class MqttKafkaBridgeApplication {
 
                 @Override
                 public void messageArrived(String topic, MqttMessage message) throws Exception {
+                    // 将MQTT消息转为Kafka的消息
                     String payload = new String(message.getPayload(), StandardCharsets.UTF_8);
                     String deviceId = extractDeviceId(topic);
                     KafkaTelemetryEnvelope envelope = new KafkaTelemetryEnvelope(topic, payload);
                     String envelopeJson = objectMapper.writeValueAsString(envelope);
-                    // 构建kafka的consumer的key,保证deviceId在相同node处理
-                    producer.send(new ProducerRecord<>(config.kafkaTopic(), deviceId, envelopeJson)).get();
+                    String kafkaTopic = resolveKafkaTopic(config, topic);
+                    producer.send(new ProducerRecord<>(kafkaTopic, deviceId, envelopeJson)).get();
                     System.out.printf("bridge forwarded mqttTopic=%s deviceId=%s kafkaTopic=%s payload=%s%n",
                             topic,
                             deviceId,
-                            config.kafkaTopic(),
+                            kafkaTopic,
                             payload);
                 }
 
@@ -123,16 +131,19 @@ public final class MqttKafkaBridgeApplication {
                 }
             });
 
+            // MQTT客户端配置
             MqttConnectOptions options = new MqttConnectOptions();
             options.setAutomaticReconnect(true);
             options.setCleanSession(true);
             mqttClient.connect(options);
 
-            System.out.printf("bridge started mqttBroker=%s mqttTopicFilter=%s kafkaBootstrap=%s kafkaTopic=%s%n",
+            System.out.printf(
+                    "bridge started mqttBroker=%s mqttTopicFilter=%s kafkaBootstrap=%s telemetryKafkaTopic=%s commandAckKafkaTopic=%s%n",
                     config.mqttBrokerUrl(),
                     config.mqttTopicFilter(),
                     config.kafkaBootstrapServers(),
-                    config.kafkaTopic());
+                    config.telemetryKafkaTopic(),
+                    config.commandAckKafkaTopic());
 
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 try {
@@ -144,11 +155,11 @@ public final class MqttKafkaBridgeApplication {
                 running.countDown();
             }));
 
-            // HA 模式
             while (true) {
                 if (running.await(config.leaderHealthCheckIntervalMs(), TimeUnit.MILLISECONDS)) {
                     return;
                 }
+                // 检查锁失败，就退出
                 if (leaderElector != null && !leaderElector.isLockHealthy()) {
                     System.out.printf("bridge leader lock lost lockKey=%s, stop mqtt consume%n", config.leaderLockKey());
                     try {
@@ -163,14 +174,54 @@ public final class MqttKafkaBridgeApplication {
         }
     }
 
+    /**
+     * 订阅MQTT主题
+     */
+    private static void subscribeAll(MqttClient mqttClient, BridgeConfig config) throws MqttException {
+        // 多主题
+        for (String topicFilter : config.mqttTopicFilter().split(",")) {
+            String normalized = topicFilter.trim();
+            if (!normalized.isBlank()) {
+                mqttClient.subscribe(normalized, config.mqttQos());
+                System.out.printf("bridge subscribed topicFilter=%s%n", normalized);
+            }
+        }
+    }
+
+    /**
+     * 从MQTT主题中提取设备ID
+     */
     private static String extractDeviceId(String topic) {
         String[] segments = topic.split("/");
-        if (segments.length != 3 || !TOPIC_PREFIX.equals(segments[0]) || !TOPIC_SUFFIX.equals(segments[2])) {
-            throw new IllegalArgumentException("Unsupported mqtt telemetry topic: " + topic);
+        // 上行的遥测数据
+        if (segments.length == 3
+                && TOPIC_PREFIX.equals(segments[0])
+                && TELEMETRY_SUFFIX.equals(segments[2])) {
+            if (segments[1].isBlank()) {
+                throw new IllegalArgumentException("Device id in mqtt topic must not be blank");
+            }
+            return segments[1];
         }
-        if (segments[1].isBlank()) {
-            throw new IllegalArgumentException("Device id in mqtt topic must not be blank");
+        // 上行的ACK
+        if (segments.length == 4
+                && TOPIC_PREFIX.equals(segments[0])
+                && DEVICE_SEGMENT.equals(segments[1])
+                && COMMAND_ACK_SUFFIX.equals(segments[3])) {
+            if (segments[2].isBlank()) {
+                throw new IllegalArgumentException("Device id in mqtt topic must not be blank");
+            }
+            return segments[2];
         }
-        return segments[1];
+        throw new IllegalArgumentException("Unsupported mqtt topic: " + topic);
+    }
+
+    private static String resolveKafkaTopic(BridgeConfig config, String topic) {
+        if (topic.endsWith("/" + TELEMETRY_SUFFIX)) {
+            return config.telemetryKafkaTopic();
+        }
+        if (topic.endsWith("/" + COMMAND_ACK_SUFFIX)) {
+            return config.commandAckKafkaTopic();
+        }
+        throw new IllegalArgumentException("Unsupported mqtt topic: " + topic);
     }
 }
