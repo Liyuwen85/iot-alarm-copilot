@@ -1,156 +1,72 @@
 package com.example.iotalarmcopilot.mockdevice;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
-import org.eclipse.paho.client.mqttv3.MqttException;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
-import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
+import com.example.iotalarmcopilot.mockdevice.application.GatewayServerService;
+import com.example.iotalarmcopilot.mockdevice.application.GatewayTelemetryForwarder;
+import com.example.iotalarmcopilot.mockdevice.application.MockDeviceTelemetryService;
+import com.example.iotalarmcopilot.mockdevice.application.port.Lwm2mServerRuntime;
+import com.example.iotalarmcopilot.mockdevice.config.Lwm2mGatewayConfig;
+import com.example.iotalarmcopilot.mockdevice.config.MockDeviceConfig;
+import com.example.iotalarmcopilot.mockdevice.infrastructure.lwm2m.LeshanLwm2mServer;
+import com.example.iotalarmcopilot.mockdevice.infrastructure.mqtt.PahoMqttMessagePublisher;
+import com.example.iotalarmcopilot.mockdevice.infrastructure.mqtt.PahoMqttSubscriberClientProvider;
+import com.example.iotalarmcopilot.mockdevice.interfaces.mqtt.GatewayMqttCommandConsumer;
+import com.example.iotalarmcopilot.mockdevice.interfaces.mqtt.MockDeviceMqttCommandConsumer;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.nio.charset.StandardCharsets;
-import java.time.OffsetDateTime;
-import java.util.Random;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-
-/**
- * 简单模拟设备发送数据
- */
 public final class MockDeviceApplication {
 
     private MockDeviceApplication() {
     }
 
     public static void main(String[] args) {
-        MockDeviceConfig config = MockDeviceConfig.load();
+        MockDeviceConfig mockDeviceConfig = MockDeviceConfig.load();
+        Lwm2mGatewayConfig lwm2mGatewayConfig = Lwm2mGatewayConfig.load();
 
-        ObjectMapper objectMapper = new ObjectMapper();
+        // mock-device上报服务
+        PahoMqttMessagePublisher mockDeviceMqttMessagePublisher = new PahoMqttMessagePublisher(mockDeviceConfig.brokerUrl(), mockDeviceConfig.clientId());
+        MockDeviceTelemetryService mockDeviceTelemetryService = new MockDeviceTelemetryService(
+                mockDeviceConfig,
+                mockDeviceMqttMessagePublisher);
 
-        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+        // mock-device命令消费者
+        MockDeviceMqttCommandConsumer mockDeviceMqttCommandConsumer = new MockDeviceMqttCommandConsumer(
+                new PahoMqttSubscriberClientProvider(
+                        mockDeviceConfig.brokerUrl(),
+                        mockDeviceConfig.clientId() + "-cmd",
+                        mockDeviceConfig.commandTopic(),
+                        mockDeviceConfig.qos()),
+                mockDeviceTelemetryService);
+        mockDeviceMqttCommandConsumer.subscribe();
 
-        // 结束标志
-        AtomicBoolean finished = new AtomicBoolean(false);
-        CountDownLatch completion = new CountDownLatch(1);
-        // 发布次数
-        AtomicInteger publishedCount = new AtomicInteger(0);
+        // gateway上报服务
+        PahoMqttMessagePublisher gatewayMqttMessagePublisher = new PahoMqttMessagePublisher(lwm2mGatewayConfig.brokerUrl(), lwm2mGatewayConfig.mqttClientId());
+        GatewayTelemetryForwarder gatewayTelemetryForwarder = new GatewayTelemetryForwarder(gatewayMqttMessagePublisher);
+        Lwm2mServerRuntime lwm2MServerRuntime = new LeshanLwm2mServer(lwm2mGatewayConfig, gatewayTelemetryForwarder);
+        GatewayServerService gatewayServerService = new GatewayServerService(
+                lwm2mGatewayConfig,
+                lwm2MServerRuntime,
+                gatewayMqttMessagePublisher);
 
-        try (MqttClient client = new MqttClient(
-                config.brokerUrl(),
-                config.clientId(),
-                new MemoryPersistence())) {
+        // gateway命令消费者
+        GatewayMqttCommandConsumer gatewayMqttCommandConsumer = new GatewayMqttCommandConsumer(
+                new PahoMqttSubscriberClientProvider(lwm2mGatewayConfig.brokerUrl(),
+                        lwm2mGatewayConfig.mqttClientId() + "-cmd",
+                        lwm2mGatewayConfig.commandTopicFilter(),
+                        lwm2mGatewayConfig.mqttQos()),
+                gatewayServerService);
+        gatewayMqttCommandConsumer.subscribe();
 
-            connect(client);
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            mockDeviceMqttCommandConsumer.close();
+            mockDeviceTelemetryService.stop();
+            mockDeviceMqttMessagePublisher.close();
 
-            System.out.printf(
-                    "mock-device connected broker=%s clientId=%s topic=%s intervalMs=%d maxMessages=%d%n",
-                    config.brokerUrl(),
-                    config.clientId(),
-                    config.topic(),
-                    config.intervalMs(),
-                    config.maxMessages());
+            gatewayMqttCommandConsumer.close();
+            gatewayServerService.stop();
+            gatewayMqttMessagePublisher.close();
+        }));
 
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                stopScheduler(scheduler);
-                disconnectQuietly(client);
-            }));
-
-            scheduler.scheduleAtFixedRate(
-                    () -> publishOnce(client, objectMapper, config, publishedCount, finished, completion),
-                    0,
-                    config.intervalMs(),
-                    TimeUnit.MILLISECONDS);
-
-            completion.await();
-        } catch (Exception exception) {
-            throw new IllegalStateException("mock-device failed to run", exception);
-        } finally {
-            stopScheduler(scheduler);
-        }
-    }
-
-    private static void connect(MqttClient client) throws MqttException {
-        MqttConnectOptions options = new MqttConnectOptions();
-        options.setAutomaticReconnect(true);
-        options.setCleanSession(true);
-        client.connect(options);
-    }
-
-    private static void publishOnce(
-            MqttClient client,
-            ObjectMapper objectMapper,
-            MockDeviceConfig config,
-            AtomicInteger publishedCount,
-            AtomicBoolean finished,
-            CountDownLatch completion) {
-        if (finished.get()) {
-            return;
-        }
-
-        int sequence = publishedCount.incrementAndGet();
-        try {
-            if (!client.isConnected()) {
-                System.out.println("mock-device waiting for MQTT reconnect");
-                publishedCount.decrementAndGet();
-                return;
-            }
-
-            MockTelemetryPayload payload = nextPayload(config.deviceId(), sequence);
-            String payloadJson = objectMapper.writeValueAsString(payload);
-            MqttMessage message = new MqttMessage(payloadJson.getBytes(StandardCharsets.UTF_8));
-            message.setQos(config.qos());
-            client.publish(config.topic(), message);
-
-            System.out.printf("published #%d topic=%s payload=%s%n", sequence, config.topic(), payloadJson);
-
-            if (config.maxMessages() > 0 && sequence >= config.maxMessages()) {
-                finished.set(true);
-                completion.countDown();
-            }
-        } catch (JsonProcessingException exception) {
-            finished.set(true);
-            completion.countDown();
-            throw new IllegalStateException("failed to serialize telemetry payload", exception);
-        } catch (MqttException exception) {
-            publishedCount.decrementAndGet();
-            System.out.printf("publish failed topic=%s reason=%s%n", config.topic(), exception.getMessage());
-        }
-    }
-
-    private static MockTelemetryPayload nextPayload(String deviceId, int sequence) {
-        Random random = new Random(sequence * 97L + 13L);
-        BigDecimal temperature = toDecimal(sequence % 5 == 0
-                ? 80 + (random.nextDouble() * 5)
-                : 72 + (random.nextDouble() * 6));
-        BigDecimal humidity = toDecimal(35 + (random.nextDouble() * 15));
-        return new MockTelemetryPayload(
-                deviceId,
-                temperature,
-                humidity,
-                OffsetDateTime.now().toString());
-    }
-
-    private static BigDecimal toDecimal(double value) {
-        return BigDecimal.valueOf(value).setScale(2, RoundingMode.HALF_UP);
-    }
-
-    private static void stopScheduler(ScheduledExecutorService scheduler) {
-        scheduler.shutdownNow();
-    }
-
-    private static void disconnectQuietly(MqttClient client) {
-        try {
-            if (client.isConnected()) {
-                client.disconnect();
-            }
-        } catch (MqttException exception) {
-            System.out.printf("disconnect failed reason=%s%n", exception.getMessage());
-        }
+        gatewayServerService.start();
+        mockDeviceTelemetryService.start();
+        mockDeviceTelemetryService.awaitCompletion();
     }
 }
