@@ -1,8 +1,6 @@
 package com.example.iotalarmcopilot.mockdevice;
 
-import com.example.iotalarmcopilot.mockdevice.application.GatewayServerService;
-import com.example.iotalarmcopilot.mockdevice.application.GatewayTelemetryForwarder;
-import com.example.iotalarmcopilot.mockdevice.application.MockDeviceTelemetryService;
+import com.example.iotalarmcopilot.mockdevice.application.*;
 import com.example.iotalarmcopilot.mockdevice.application.port.Lwm2mServerRuntime;
 import com.example.iotalarmcopilot.mockdevice.config.Lwm2mGatewayConfig;
 import com.example.iotalarmcopilot.mockdevice.config.MockDeviceConfig;
@@ -12,6 +10,9 @@ import com.example.iotalarmcopilot.mockdevice.infrastructure.mqtt.PahoMqttSubscr
 import com.example.iotalarmcopilot.mockdevice.interfaces.mqtt.GatewayMqttCommandConsumer;
 import com.example.iotalarmcopilot.mockdevice.interfaces.mqtt.MockDeviceMqttCommandConsumer;
 
+/**
+ * 实现：1. 模拟设备001；2. 模拟LwM2M型网关。
+ */
 public final class MockDeviceApplication {
 
     private MockDeviceApplication() {
@@ -39,8 +40,19 @@ public final class MockDeviceApplication {
 
         // gateway上报服务
         PahoMqttMessagePublisher gatewayMqttMessagePublisher = new PahoMqttMessagePublisher(lwm2mGatewayConfig.brokerUrl(), lwm2mGatewayConfig.mqttClientId());
-        GatewayTelemetryForwarder gatewayTelemetryForwarder = new GatewayTelemetryForwarder(gatewayMqttMessagePublisher);
+
+        GatewayTelemetryPublishScheduler gatewayTelemetryPublishScheduler =
+                new GatewayTelemetryPublishScheduler(150L);
+        GatewayTelemetryDeduplicator gatewayTelemetryDeduplicator =
+                new GatewayTelemetryDeduplicator(5000L);
+        GatewayTelemetryForwarder gatewayTelemetryForwarder = new GatewayTelemetryForwarder(
+                lwm2mGatewayConfig,
+                gatewayMqttMessagePublisher,
+                gatewayTelemetryPublishScheduler,
+                gatewayTelemetryDeduplicator);
+
         Lwm2mServerRuntime lwm2MServerRuntime = new LeshanLwm2mServer(lwm2mGatewayConfig, gatewayTelemetryForwarder);
+
         GatewayServerService gatewayServerService = new GatewayServerService(
                 lwm2mGatewayConfig,
                 lwm2MServerRuntime,
@@ -62,6 +74,8 @@ public final class MockDeviceApplication {
 
             gatewayMqttCommandConsumer.close();
             gatewayServerService.stop();
+
+            gatewayTelemetryForwarder.close();
             gatewayMqttMessagePublisher.close();
         }));
 

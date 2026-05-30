@@ -33,8 +33,6 @@ import java.util.Collection;
 
 public class LeshanLwm2mServer implements Lwm2mServerRuntime {
 
-    private static final long PUBLISH_DEBOUNCE_MS = 150L;
-    private static final long DUPLICATE_SUPPRESSION_WINDOW_MS = 5000L;
     // 采集资源路径
     private static final String TEMPERATURE_PATH = "/3303/0/5700";
     private static final String HUMIDITY_PATH = "/3304/0/5700";
@@ -143,6 +141,7 @@ public class LeshanLwm2mServer implements Lwm2mServerRuntime {
                                      Registration newReg) {
                 System.out.printf("lwm2m client unregistered endpoint=%s expired=%s%n",
                         registration.getEndpoint(), expired);
+                eventHandler.onClientUnregistered(registration.getEndpoint());
             }
         });
 
@@ -188,7 +187,7 @@ public class LeshanLwm2mServer implements Lwm2mServerRuntime {
                     case HUMIDITY_PATH -> current.withHumidity(value, now);
                     default -> current;
                 };
-                eventHandler.onTelemetryReported(updated.deviceId(), updated);
+                eventHandler.onTelemetryReported(updated);
             }
 
             @Override

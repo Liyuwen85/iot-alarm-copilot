@@ -6,5 +6,7 @@ public interface Lwm2mServerHandler {
 
     void onClientRegistered(String endpoint);
 
-    void onTelemetryReported(String endpoint, Lwm2mDeviceSnapshot snapshot);
+    void onClientUnregistered(String endpoint);
+
+    void onTelemetryReported(Lwm2mDeviceSnapshot snapshot);
 }
