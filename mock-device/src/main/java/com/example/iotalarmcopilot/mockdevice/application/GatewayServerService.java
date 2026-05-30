@@ -85,8 +85,9 @@ public class GatewayServerService {
         String ackJson = null;
         try {
             ackJson = objectMapper.writeValueAsString(ackPayload);
-            mqttMessagePublisher.publish(config.commandAckTopicPattern(), ackJson, config.mqttQos());
-            System.out.printf("mock-device ack published topic=%s payload=%s%n", config.commandAckTopicPattern(), ackJson);
+            String ackTopic = config.commandAckTopicPattern().replace("{deviceId}", ackPayload.deviceId());
+            mqttMessagePublisher.publish(ackTopic, ackJson, config.mqttQos());
+            System.out.printf("mock-device ack published topic=%s payload=%s%n", ackTopic, ackJson);
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("failed to serialize ack payload", e);
         }

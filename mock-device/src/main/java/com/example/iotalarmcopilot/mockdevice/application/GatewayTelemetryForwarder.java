@@ -53,6 +53,8 @@ public class GatewayTelemetryForwarder implements Lwm2mServerHandler, AutoClosea
         if (!snapshot.isComplete()) {
             return;
         }
+
+        publishScheduler.schedule(snapshot.deviceId(), () -> publishLatest(snapshot.deviceId()));
     }
 
     private void publishLatest(String deviceId) {

@@ -30,6 +30,8 @@ import java.math.BigDecimal;
 import java.net.InetSocketAddress;
 import java.time.OffsetDateTime;
 import java.util.Collection;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class LeshanLwm2mServer implements Lwm2mServerRuntime {
 
@@ -43,6 +45,7 @@ public class LeshanLwm2mServer implements Lwm2mServerRuntime {
 
     private final Lwm2mGatewayConfig config;
     private final Lwm2mServerHandler eventHandler;
+    private final Map<String, Lwm2mDeviceSnapshot> latestSnapshots;
 
     private LeshanServer server;
     private volatile boolean running = false;
@@ -50,6 +53,7 @@ public class LeshanLwm2mServer implements Lwm2mServerRuntime {
     public LeshanLwm2mServer(Lwm2mGatewayConfig config, Lwm2mServerHandler eventHandler) {
         this.config = config;
         this.eventHandler = eventHandler;
+        this.latestSnapshots = new ConcurrentHashMap<>();
     }
 
     @Override
@@ -122,6 +126,7 @@ public class LeshanLwm2mServer implements Lwm2mServerRuntime {
                                    Collection<Observation> previousObservations) {
                 System.out.printf("lwm2m client registered endpoint=%s address=%s%n",
                         registration.getEndpoint(), registration.getSocketAddress());
+                latestSnapshots.remove(registration.getEndpoint());
                 eventHandler.onClientRegistered(registration.getEndpoint());
                 observeMetric(registration, TEMPERATURE_PATH);
                 observeMetric(registration, HUMIDITY_PATH);
@@ -141,6 +146,7 @@ public class LeshanLwm2mServer implements Lwm2mServerRuntime {
                                      Registration newReg) {
                 System.out.printf("lwm2m client unregistered endpoint=%s expired=%s%n",
                         registration.getEndpoint(), expired);
+                latestSnapshots.remove(registration.getEndpoint());
                 eventHandler.onClientUnregistered(registration.getEndpoint());
             }
         });
@@ -180,13 +186,16 @@ public class LeshanLwm2mServer implements Lwm2mServerRuntime {
                 }
 
                 String path = observation.getPath().toString();
-                Lwm2mDeviceSnapshot current = Lwm2mDeviceSnapshot.empty(registration.getEndpoint());
+                Lwm2mDeviceSnapshot current = latestSnapshots.getOrDefault(
+                        registration.getEndpoint(),
+                        Lwm2mDeviceSnapshot.empty(registration.getEndpoint()));
                 OffsetDateTime now = OffsetDateTime.now();
                 Lwm2mDeviceSnapshot updated = switch (path) {
                     case TEMPERATURE_PATH -> current.withTemperature(value, now);
                     case HUMIDITY_PATH -> current.withHumidity(value, now);
                     default -> current;
                 };
+                latestSnapshots.put(registration.getEndpoint(), updated);
                 eventHandler.onTelemetryReported(updated);
             }
 
