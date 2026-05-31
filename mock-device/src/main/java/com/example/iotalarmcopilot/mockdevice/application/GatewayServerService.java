@@ -6,20 +6,20 @@ import com.example.iotalarmcopilot.mockdevice.config.Lwm2mGatewayConfig;
 import com.example.iotalarmcopilot.mockdevice.domain.CommandAckPayload;
 import com.example.iotalarmcopilot.mockdevice.domain.InvalidReportIntervalException;
 import com.example.iotalarmcopilot.mockdevice.domain.SetReportIntervalCommandPayload;
+import com.example.iotalarmcopilot.mockdevice.support.MockDeviceLoggers;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
 
 import java.time.OffsetDateTime;
 
-/**
- * lwm2m网关服务
- */
 public class GatewayServerService {
+
+    private static final Logger GATEWAY_LOGGER = MockDeviceLoggers.gatewayLogger();
 
     private final Lwm2mGatewayConfig config;
     private final Lwm2mServerRuntime lwm2MServerRuntime;
     private final MqttMessagePublisher mqttMessagePublisher;
-
     private final ObjectMapper objectMapper;
 
     public GatewayServerService(Lwm2mGatewayConfig config,
@@ -39,10 +39,6 @@ public class GatewayServerService {
         lwm2MServerRuntime.stop();
     }
 
-    /**
-     * 下行命令处理
-     * @param command
-     */
     public void processSetReportIntervalCommandPayload(SetReportIntervalCommandPayload command) {
         if (!"set_report_interval".equalsIgnoreCase(command.commandType())) {
             publishAck(new CommandAckPayload(
@@ -76,7 +72,6 @@ public class GatewayServerService {
             }
             String ackTopic = config.commandAckTopicPattern().replace("{deviceId}", command.deviceId());
 
-            // 成功回复
             publishAck(new CommandAckPayload(
                     command.commandId(),
                     command.deviceId(),
@@ -84,7 +79,8 @@ public class GatewayServerService {
                     OffsetDateTime.now().toString(),
                     "interval changed to " + command.params().intervalMs()));
 
-            System.out.printf("command-applied source=gateway deviceId=%s ackTopic=%s commandId=%s intervalMs=%d%n",
+            GATEWAY_LOGGER.info(
+                    "command-applied source=gateway deviceId={} ackTopic={} commandId={} intervalMs={}",
                     command.deviceId(),
                     ackTopic,
                     command.commandId(),
@@ -100,15 +96,17 @@ public class GatewayServerService {
     }
 
     private void publishAck(CommandAckPayload ackPayload) {
-        String ackJson = null;
         try {
-            ackJson = objectMapper.writeValueAsString(ackPayload);
+            String ackJson = objectMapper.writeValueAsString(ackPayload);
             String ackTopic = config.commandAckTopicPattern().replace("{deviceId}", ackPayload.deviceId());
             mqttMessagePublisher.publish(ackTopic, ackJson, config.mqttQos());
-            System.out.printf("command-ack-published source=gateway topic=%s payload=%s%n", ackTopic, ackJson);
+            GATEWAY_LOGGER.info("command-ack-published source=gateway topic={} commandId={} status={}",
+                    ackTopic,
+                    ackPayload.commandId(),
+                    ackPayload.status());
+            GATEWAY_LOGGER.debug("command-ack-payload source=gateway topic={} payload={}", ackTopic, ackJson);
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("failed to serialize ack payload", e);
         }
     }
-
 }

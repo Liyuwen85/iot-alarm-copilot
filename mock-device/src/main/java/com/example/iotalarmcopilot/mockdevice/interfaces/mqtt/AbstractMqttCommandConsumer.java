@@ -2,14 +2,17 @@ package com.example.iotalarmcopilot.mockdevice.interfaces.mqtt;
 
 import com.example.iotalarmcopilot.mockdevice.domain.SetReportIntervalCommandPayload;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.eclipse.paho.client.mqttv3.*;
+import org.slf4j.Logger;
+import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
+import org.eclipse.paho.client.mqttv3.MqttCallbackExtended;
+import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.eclipse.paho.client.mqttv3.MqttException;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import java.nio.charset.StandardCharsets;
 import java.util.regex.Pattern;
 
-/**
- * 抽象command处理类
- */
 public abstract class AbstractMqttCommandConsumer implements AutoCloseable {
 
     protected final MqttSubscriberClientProvider clientProvider;
@@ -26,13 +29,11 @@ public abstract class AbstractMqttCommandConsumer implements AutoCloseable {
             this.client = clientProvider.create();
         }
 
-        // 设置回调
         client.setCallback(new MqttCallbackExtended() {
             @Override
             public void connectComplete(boolean reconnect, String serverURI) {
                 try {
                     if (client != null && client.isConnected()) {
-                        // 订阅
                         client.subscribe(clientProvider.commandTopic(), clientProvider.qos());
                     }
                 } catch (MqttException exception) {
@@ -46,9 +47,9 @@ public abstract class AbstractMqttCommandConsumer implements AutoCloseable {
 
             @Override
             public void messageArrived(String topic, MqttMessage message) throws Exception {
-                // 下行command处理
                 String payloadText = new String(message.getPayload(), StandardCharsets.UTF_8);
-                System.out.printf("command-received topic=%s payload=%s%n", topic, payloadText);
+                logger().info("command-received topic={}", topic);
+                logger().debug("command-payload topic={} payload={}", topic, payloadText);
                 if (!matchesTopic(clientProvider.commandTopic(), topic)) {
                     return;
                 }
@@ -56,19 +57,15 @@ public abstract class AbstractMqttCommandConsumer implements AutoCloseable {
                     SetReportIntervalCommandPayload command = objectMapper.readValue(
                             payloadText,
                             SetReportIntervalCommandPayload.class);
-
-                    // 处理command
                     process(command);
-
-                    System.out.printf("command-applied topic=%s commandId=%s intervalMs=%d%n",
+                    logger().info("command-applied topic={} commandId={} intervalMs={}",
                             topic,
                             command.commandId(),
                             command.params().intervalMs());
                 } catch (Exception exception) {
-                    System.out.printf("command-handling-failed topic=%s reason=%s%n",
+                    logger().warn("command-handling-failed topic={} reason={}",
                             topic,
                             exception.getMessage());
-                    exception.printStackTrace(System.out);
                     throw exception;
                 }
             }
@@ -78,7 +75,6 @@ public abstract class AbstractMqttCommandConsumer implements AutoCloseable {
             }
         });
 
-        // 连接设置
         MqttConnectOptions options = new MqttConnectOptions();
         options.setAutomaticReconnect(true);
         options.setCleanSession(true);
@@ -90,12 +86,9 @@ public abstract class AbstractMqttCommandConsumer implements AutoCloseable {
         }
     }
 
-    /**
-     * 处理command
-     *
-     * @param payload
-     */
     protected abstract void process(SetReportIntervalCommandPayload payload);
+
+    protected abstract Logger logger();
 
     @Override
     public void close() {

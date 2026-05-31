@@ -13,8 +13,13 @@ import com.example.iotalarmcopilot.mockdevice.infrastructure.mqtt.PahoMqttMessag
 import com.example.iotalarmcopilot.mockdevice.infrastructure.mqtt.PahoMqttSubscriberClientProvider;
 import com.example.iotalarmcopilot.mockdevice.interfaces.mqtt.GatewayMqttCommandConsumer;
 import com.example.iotalarmcopilot.mockdevice.interfaces.mqtt.MockDeviceMqttCommandConsumer;
+import com.example.iotalarmcopilot.mockdevice.support.MockDeviceLoggers;
+import org.slf4j.Logger;
 
 public final class MockDeviceApplication {
+
+    private static final Logger DEVICE_LOGGER = MockDeviceLoggers.deviceLogger();
+    private static final Logger GATEWAY_LOGGER = MockDeviceLoggers.gatewayLogger();
 
     private MockDeviceApplication() {
     }
@@ -22,14 +27,15 @@ public final class MockDeviceApplication {
     public static void main(String[] args) {
         MockDeviceConfig mockDeviceConfig = MockDeviceConfig.load();
         Lwm2mGatewayConfig lwm2mGatewayConfig = Lwm2mGatewayConfig.load();
-        System.out.printf("mock-device starting deviceId=%s telemetryTopic=%s intervalMs=%d maxMessages=%d%n",
+        DEVICE_LOGGER.info(
+                "mock-device starting deviceId={} telemetryTopic={} intervalMs={} maxMessages={}",
                 mockDeviceConfig.deviceId(),
                 mockDeviceConfig.telemetryTopic(),
                 mockDeviceConfig.intervalMs(),
                 mockDeviceConfig.maxMessages());
 
         PahoMqttMessagePublisher mockDeviceMqttMessagePublisher =
-                new PahoMqttMessagePublisher(mockDeviceConfig.brokerUrl(), mockDeviceConfig.clientId());
+                new PahoMqttMessagePublisher(mockDeviceConfig.brokerUrl(), mockDeviceConfig.clientId(), DEVICE_LOGGER);
         MockDeviceTelemetryService mockDeviceTelemetryService = new MockDeviceTelemetryService(
                 mockDeviceConfig,
                 mockDeviceMqttMessagePublisher);
@@ -44,7 +50,7 @@ public final class MockDeviceApplication {
         mockDeviceMqttCommandConsumer.subscribe();
 
         PahoMqttMessagePublisher gatewayMqttMessagePublisher =
-                new PahoMqttMessagePublisher(lwm2mGatewayConfig.brokerUrl(), lwm2mGatewayConfig.mqttClientId());
+                new PahoMqttMessagePublisher(lwm2mGatewayConfig.brokerUrl(), lwm2mGatewayConfig.mqttClientId(), GATEWAY_LOGGER);
 
         GatewayTelemetryPublishScheduler gatewayTelemetryPublishScheduler =
                 new GatewayTelemetryPublishScheduler(150L);
@@ -86,13 +92,13 @@ public final class MockDeviceApplication {
 
         try {
             gatewayServerService.start();
-            System.out.println("mock-device gateway started");
+            GATEWAY_LOGGER.info("mock-device gateway started");
         } catch (Exception exception) {
-            System.out.printf("mock-device gateway start failed reason=%s%n", exception.getMessage());
+            GATEWAY_LOGGER.warn("mock-device gateway start failed reason={}", exception.getMessage());
         }
         mockDeviceTelemetryService.start();
-        System.out.println("mock-device telemetry service started");
+        DEVICE_LOGGER.info("mock-device telemetry service started");
         mockDeviceTelemetryService.awaitCompletion();
-        System.out.println("mock-device telemetry service completed");
+        DEVICE_LOGGER.info("mock-device telemetry service completed");
     }
 }

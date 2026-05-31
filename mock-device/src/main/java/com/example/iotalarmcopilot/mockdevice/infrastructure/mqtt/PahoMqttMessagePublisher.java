@@ -1,6 +1,7 @@
 package com.example.iotalarmcopilot.mockdevice.infrastructure.mqtt;
 
 import com.example.iotalarmcopilot.mockdevice.application.port.MqttMessagePublisher;
+import org.slf4j.Logger;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
@@ -8,22 +9,20 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import java.nio.charset.StandardCharsets;
 
-/**
- * MQTT消息发布实现
- */
 public class PahoMqttMessagePublisher implements MqttMessagePublisher, AutoCloseable {
 
     private final MqttClient client;
     private final String brokerUrl;
+    private final Logger logger;
 
-    public PahoMqttMessagePublisher(String brokerUrl, String clientId) {
+    public PahoMqttMessagePublisher(String brokerUrl, String clientId, Logger logger) {
         this.client = PahoMqttClientFactory.create(brokerUrl, clientId);
         this.brokerUrl = brokerUrl;
+        this.logger = logger;
     }
 
     @Override
     public void publish(String topic, String payload, int qos) {
-        // 是否连接
         if (!ensureConnected()) {
             return;
         }
@@ -50,7 +49,6 @@ public class PahoMqttMessagePublisher implements MqttMessagePublisher, AutoClose
             return true;
         }
 
-        // 连接设置
         MqttConnectOptions options = new MqttConnectOptions();
         options.setAutomaticReconnect(true);
         options.setCleanSession(true);
@@ -59,10 +57,10 @@ public class PahoMqttMessagePublisher implements MqttMessagePublisher, AutoClose
             client.connect(options);
             return true;
         } catch (MqttException exception) {
-            System.out.printf("device waiting for MQTT broker=%s reason=%s%n",
-                    this.brokerUrl, exception.getMessage());
+            logger.warn("mqtt publisher waiting broker={} reason={}",
+                    this.brokerUrl,
+                    exception.getMessage());
             return false;
         }
     }
-
 }

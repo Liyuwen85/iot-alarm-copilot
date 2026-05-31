@@ -5,8 +5,10 @@ import com.example.iotalarmcopilot.mockdevice.config.MockDeviceConfig;
 import com.example.iotalarmcopilot.mockdevice.domain.CommandAckPayload;
 import com.example.iotalarmcopilot.mockdevice.domain.MockTelemetryPayload;
 import com.example.iotalarmcopilot.mockdevice.domain.SetReportIntervalCommandPayload;
+import com.example.iotalarmcopilot.mockdevice.support.MockDeviceLoggers;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -20,14 +22,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-/**
- * 模拟设备遥测上报和下行处理
- */
 public class MockDeviceTelemetryService {
+
+    private static final Logger DEVICE_LOGGER = MockDeviceLoggers.deviceLogger();
 
     private final MockDeviceConfig config;
     private final MqttMessagePublisher mqttMessagePublisher;
-
     private final ScheduledExecutorService scheduler;
     private final AtomicBoolean finished;
     private final AtomicInteger publishedCount;
@@ -49,14 +49,11 @@ public class MockDeviceTelemetryService {
     }
 
     public void start() {
-        System.out.printf("mock-device telemetry scheduler starting intervalMs=%d maxMessages=%d%n",
+        DEVICE_LOGGER.info(
+                "mock-device telemetry scheduler starting intervalMs={} maxMessages={}",
                 config.intervalMs(),
                 config.maxMessages());
-        scheduler.scheduleAtFixedRate(
-                this::publishOnce,
-                0,
-                200,
-                TimeUnit.MILLISECONDS);
+        scheduler.scheduleAtFixedRate(this::publishOnce, 0, 200, TimeUnit.MILLISECONDS);
     }
 
     public void awaitCompletion() {
@@ -104,7 +101,8 @@ public class MockDeviceTelemetryService {
                 "SUCCESS",
                 OffsetDateTime.now().toString(),
                 "interval changed to " + command.params().intervalMs()));
-        System.out.printf("command-applied source=device deviceId=%s ackTopic=%s commandId=%s intervalMs=%d%n",
+        DEVICE_LOGGER.info(
+                "command-applied source=device deviceId={} ackTopic={} commandId={} intervalMs={}",
                 config.deviceId(),
                 config.commandAckTopic(),
                 command.commandId(),
@@ -112,10 +110,7 @@ public class MockDeviceTelemetryService {
     }
 
     private void publishOnce() {
-        if (finished.get()) {
-            return;
-        }
-        if (!shouldPublishNow()) {
+        if (finished.get() || !shouldPublishNow()) {
             return;
         }
 
@@ -124,7 +119,8 @@ public class MockDeviceTelemetryService {
         try {
             MockTelemetryPayload payload = nextPayload(config.deviceId(), sequence);
             String payloadJson = objectMapper.writeValueAsString(payload);
-            System.out.printf("mock-device telemetry publishing topic=%s sequence=%d payload=%s%n",
+            DEVICE_LOGGER.debug(
+                    "mock-device telemetry publishing topic={} sequence={} payload={}",
                     config.telemetryTopic(),
                     sequence,
                     payloadJson);
@@ -132,7 +128,7 @@ public class MockDeviceTelemetryService {
             mqttMessagePublisher.publish(config.telemetryTopic(), payloadJson, config.qos());
 
             lastPublishedAtMs.set(System.currentTimeMillis());
-            System.out.printf("mock-device telemetry published topic=%s sequence=%d%n",
+            DEVICE_LOGGER.info("mock-device telemetry published topic={} sequence={}",
                     config.telemetryTopic(),
                     sequence);
 
@@ -145,7 +141,7 @@ public class MockDeviceTelemetryService {
             completion.countDown();
             throw new IllegalStateException("failed to serialize telemetry payload", exception);
         } catch (RuntimeException exception) {
-            System.out.printf("mock-device telemetry publish failed topic=%s sequence=%d reason=%s%n",
+            DEVICE_LOGGER.warn("mock-device telemetry publish failed topic={} sequence={} reason={}",
                     config.telemetryTopic(),
                     sequence,
                     exception.getMessage());
@@ -183,7 +179,11 @@ public class MockDeviceTelemetryService {
         try {
             String ackJson = objectMapper.writeValueAsString(ackPayload);
             mqttMessagePublisher.publish(config.commandAckTopic(), ackJson, config.qos());
-            System.out.printf("command-ack-published source=device topic=%s payload=%s%n",
+            DEVICE_LOGGER.info("command-ack-published source=device topic={} commandId={} status={}",
+                    config.commandAckTopic(),
+                    ackPayload.commandId(),
+                    ackPayload.status());
+            DEVICE_LOGGER.debug("command-ack-payload source=device topic={} payload={}",
                     config.commandAckTopic(),
                     ackJson);
         } catch (JsonProcessingException exception) {

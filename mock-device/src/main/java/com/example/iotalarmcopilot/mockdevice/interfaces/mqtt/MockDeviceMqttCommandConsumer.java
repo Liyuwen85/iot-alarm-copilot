@@ -2,11 +2,12 @@ package com.example.iotalarmcopilot.mockdevice.interfaces.mqtt;
 
 import com.example.iotalarmcopilot.mockdevice.application.MockDeviceTelemetryService;
 import com.example.iotalarmcopilot.mockdevice.domain.SetReportIntervalCommandPayload;
+import com.example.iotalarmcopilot.mockdevice.support.MockDeviceLoggers;
+import org.slf4j.Logger;
 
-/**
- * 模拟设备MQTT命令消费者
- */
 public class MockDeviceMqttCommandConsumer extends AbstractMqttCommandConsumer {
+
+    private static final Logger DEVICE_LOGGER = MockDeviceLoggers.deviceLogger();
 
     private final MockDeviceTelemetryService telemetryService;
 
@@ -19,5 +20,10 @@ public class MockDeviceMqttCommandConsumer extends AbstractMqttCommandConsumer {
     @Override
     protected void process(SetReportIntervalCommandPayload payload) {
         telemetryService.processSetReportIntervalCommandPayload(payload);
+    }
+
+    @Override
+    protected Logger logger() {
+        return DEVICE_LOGGER;
     }
 }

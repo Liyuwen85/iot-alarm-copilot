@@ -6,6 +6,8 @@ import com.example.iotalarmcopilot.mockdevice.config.Lwm2mGatewayConfig;
 import com.example.iotalarmcopilot.mockdevice.domain.InvalidReportIntervalException;
 import com.example.iotalarmcopilot.mockdevice.domain.Lwm2mDeviceSnapshot;
 import com.example.iotalarmcopilot.mockdevice.domain.SetReportIntervalCommandPayload;
+import com.example.iotalarmcopilot.mockdevice.support.MockDeviceLoggers;
+import org.slf4j.Logger;
 import org.eclipse.leshan.core.endpoint.Protocol;
 import org.eclipse.leshan.core.node.LwM2mResource;
 import org.eclipse.leshan.core.node.LwM2mSingleResource;
@@ -33,15 +35,11 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * lwm2m服务端
- */
 public class LeshanLwm2mServer implements Lwm2mServerRuntime {
 
-    // 采集资源路径
+    private static final Logger GATEWAY_LOGGER = MockDeviceLoggers.gatewayLogger();
     private static final String TEMPERATURE_PATH = "/3303/0/5700";
     private static final String HUMIDITY_PATH = "/3304/0/5700";
-    // 上报的资源映射
     private static final int REPORT_INTERVAL_OBJECT_ID = 31024;
     private static final int REPORT_INTERVAL_INSTANCE_ID = 0;
     private static final int REPORT_INTERVAL_RESOURCE_ID = 1;
@@ -114,7 +112,6 @@ public class LeshanLwm2mServer implements Lwm2mServerRuntime {
     }
 
     private void createServer() {
-        // server
         CaliforniumServerEndpointsProvider endpointsProvider =
                 new CaliforniumServerEndpointsProvider.Builder()
                         .addEndpoint(new InetSocketAddress(config.bindHost(), config.bindPort()), Protocol.COAP)
@@ -124,13 +121,13 @@ public class LeshanLwm2mServer implements Lwm2mServerRuntime {
         builder.setObjectModelProvider(new StandardModelProvider());
         server = builder.build();
 
-        // 监听client的注册事件
         server.getRegistrationService().addListener(new RegistrationListener() {
             @Override
             public void registered(Registration registration, Registration previousReg,
                                    Collection<Observation> previousObservations) {
-                System.out.printf("lwm2m client registered endpoint=%s address=%s%n",
-                        registration.getEndpoint(), registration.getSocketAddress());
+                GATEWAY_LOGGER.info("lwm2m client registered endpoint={} address={}",
+                        registration.getEndpoint(),
+                        registration.getSocketAddress());
                 latestSnapshots.remove(registration.getEndpoint());
                 eventHandler.onClientRegistered(registration.getEndpoint());
                 observeMetric(registration, TEMPERATURE_PATH);
@@ -141,7 +138,7 @@ public class LeshanLwm2mServer implements Lwm2mServerRuntime {
             public void updated(org.eclipse.leshan.server.registration.RegistrationUpdate update,
                                 Registration updatedRegistration,
                                 Registration previousRegistration) {
-                System.out.printf("lwm2m client updated endpoint=%s%n", updatedRegistration.getEndpoint());
+                GATEWAY_LOGGER.info("lwm2m client updated endpoint={}", updatedRegistration.getEndpoint());
             }
 
             @Override
@@ -149,19 +146,19 @@ public class LeshanLwm2mServer implements Lwm2mServerRuntime {
                                      Collection<Observation> observations,
                                      boolean expired,
                                      Registration newReg) {
-                System.out.printf("lwm2m client unregistered endpoint=%s expired=%s%n",
-                        registration.getEndpoint(), expired);
+                GATEWAY_LOGGER.info("lwm2m client unregistered endpoint={} expired={}",
+                        registration.getEndpoint(),
+                        expired);
                 latestSnapshots.remove(registration.getEndpoint());
                 eventHandler.onClientUnregistered(registration.getEndpoint());
             }
         });
 
-        // 监听client的资源观察事件
         server.getObservationService().addListener(new ObservationListener() {
             @Override
             public void newObservation(Observation observation, Registration registration) {
                 if (observation instanceof SingleObservation singleObservation) {
-                    System.out.printf("lwm2m observation created endpoint=%s path=%s%n",
+                    GATEWAY_LOGGER.info("lwm2m observation created endpoint={} path={}",
                             registration.getEndpoint(),
                             singleObservation.getPath());
                 }
@@ -169,13 +166,13 @@ public class LeshanLwm2mServer implements Lwm2mServerRuntime {
 
             @Override
             public void cancelled(Observation observation) {
-                System.out.printf("lwm2m observation cancelled registrationId=%s%n", observation.getRegistrationId());
+                GATEWAY_LOGGER.info("lwm2m observation cancelled registrationId={}", observation.getRegistrationId());
             }
 
             @Override
             public void onResponse(SingleObservation observation, Registration registration, ObserveResponse response) {
                 if (!response.isSuccess()) {
-                    System.out.printf("lwm2m observe failed endpoint=%s path=%s%n",
+                    GATEWAY_LOGGER.warn("lwm2m observe failed endpoint={} path={}",
                             registration.getEndpoint(),
                             observation.getPath());
                     return;
@@ -207,12 +204,12 @@ public class LeshanLwm2mServer implements Lwm2mServerRuntime {
             @Override
             public void onResponse(CompositeObservation observation, Registration registration,
                                    ObserveCompositeResponse response) {
-                System.out.printf("lwm2m composite observe ignored endpoint=%s%n", registration.getEndpoint());
+                GATEWAY_LOGGER.info("lwm2m composite observe ignored endpoint={}", registration.getEndpoint());
             }
 
             @Override
             public void onError(Observation observation, Registration registration, Exception error) {
-                System.out.printf("lwm2m observe error endpoint=%s reason=%s%n",
+                GATEWAY_LOGGER.warn("lwm2m observe error endpoint={} reason={}",
                         registration.getEndpoint(),
                         error.getMessage());
             }
@@ -221,11 +218,8 @@ public class LeshanLwm2mServer implements Lwm2mServerRuntime {
 
     private void observeMetric(Registration registration, String path) {
         try {
-            server.send(
-                    registration,
-                    new ObserveRequest(path),
-                    5000L);
-            System.out.printf("lwm2m observe requested endpoint=%s path=%s%n", registration.getEndpoint(), path);
+            server.send(registration, new ObserveRequest(path), 5000L);
+            GATEWAY_LOGGER.info("lwm2m observe requested endpoint={} path={}", registration.getEndpoint(), path);
         } catch (InvalidRequestException exception) {
             throw new IllegalStateException("invalid observe path " + path, exception);
         } catch (InterruptedException exception) {
