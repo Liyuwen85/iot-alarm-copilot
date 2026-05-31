@@ -20,6 +20,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * 模拟设备遥测上报和下行处理
+ */
 public class MockDeviceTelemetryService {
 
     private final MockDeviceConfig config;
@@ -46,6 +49,9 @@ public class MockDeviceTelemetryService {
     }
 
     public void start() {
+        System.out.printf("mock-device telemetry scheduler starting intervalMs=%d maxMessages=%d%n",
+                config.intervalMs(),
+                config.maxMessages());
         scheduler.scheduleAtFixedRate(
                 this::publishOnce,
                 0,
@@ -92,22 +98,19 @@ public class MockDeviceTelemetryService {
 
         currentIntervalMs.set(command.params().intervalMs());
 
-        // 成功回复
         publishAck(new CommandAckPayload(
                 command.commandId(),
                 config.deviceId(),
                 "SUCCESS",
                 OffsetDateTime.now().toString(),
                 "interval changed to " + command.params().intervalMs()));
-        System.out.printf("mock-device applied command topic=%s commandId=%s intervalMs=%d%n",
+        System.out.printf("command-applied source=device deviceId=%s ackTopic=%s commandId=%s intervalMs=%d%n",
+                config.deviceId(),
                 config.commandAckTopic(),
                 command.commandId(),
                 command.params().intervalMs());
     }
 
-    /**
-     * 发布一次telemetry消息
-     */
     private void publishOnce() {
         if (finished.get()) {
             return;
@@ -121,22 +124,33 @@ public class MockDeviceTelemetryService {
         try {
             MockTelemetryPayload payload = nextPayload(config.deviceId(), sequence);
             String payloadJson = objectMapper.writeValueAsString(payload);
+            System.out.printf("mock-device telemetry publishing topic=%s sequence=%d payload=%s%n",
+                    config.telemetryTopic(),
+                    sequence,
+                    payloadJson);
 
             mqttMessagePublisher.publish(config.telemetryTopic(), payloadJson, config.qos());
 
             lastPublishedAtMs.set(System.currentTimeMillis());
+            System.out.printf("mock-device telemetry published topic=%s sequence=%d%n",
+                    config.telemetryTopic(),
+                    sequence);
 
-            // 主动停止
             if (config.maxMessages() > 0 && sequence >= config.maxMessages()) {
                 finished.set(true);
                 completion.countDown();
             }
-        } catch (JsonProcessingException e) {
+        } catch (JsonProcessingException exception) {
             finished.set(true);
             completion.countDown();
-            throw new IllegalStateException("failed to serialize telemetry payload", e);
+            throw new IllegalStateException("failed to serialize telemetry payload", exception);
+        } catch (RuntimeException exception) {
+            System.out.printf("mock-device telemetry publish failed topic=%s sequence=%d reason=%s%n",
+                    config.telemetryTopic(),
+                    sequence,
+                    exception.getMessage());
+            throw exception;
         }
-
     }
 
     private boolean shouldPublishNow() {
@@ -166,13 +180,14 @@ public class MockDeviceTelemetryService {
     }
 
     private void publishAck(CommandAckPayload ackPayload) {
-        String ackJson = null;
         try {
-            ackJson = objectMapper.writeValueAsString(ackPayload);
+            String ackJson = objectMapper.writeValueAsString(ackPayload);
             mqttMessagePublisher.publish(config.commandAckTopic(), ackJson, config.qos());
-            System.out.printf("mock-device ack published topic=%s payload=%s%n", config.commandAckTopic(), ackJson);
-        } catch (JsonProcessingException e) {
-            throw new IllegalStateException("failed to serialize ack payload", e);
+            System.out.printf("command-ack-published source=device topic=%s payload=%s%n",
+                    config.commandAckTopic(),
+                    ackJson);
+        } catch (JsonProcessingException exception) {
+            throw new IllegalStateException("failed to serialize ack payload", exception);
         }
     }
 }

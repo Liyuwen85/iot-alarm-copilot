@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.paho.client.mqttv3.*;
 
 import java.nio.charset.StandardCharsets;
+import java.util.regex.Pattern;
 
 /**
  * 抽象command处理类
@@ -13,7 +14,6 @@ public abstract class AbstractMqttCommandConsumer implements AutoCloseable {
 
     protected final MqttSubscriberClientProvider clientProvider;
     private final ObjectMapper objectMapper;
-
     protected MqttClient client;
 
     public AbstractMqttCommandConsumer(MqttSubscriberClientProvider clientProvider) {
@@ -48,8 +48,8 @@ public abstract class AbstractMqttCommandConsumer implements AutoCloseable {
             public void messageArrived(String topic, MqttMessage message) throws Exception {
                 // 下行command处理
                 String payloadText = new String(message.getPayload(), StandardCharsets.UTF_8);
-                System.out.printf("mock-device command received topic=%s payload=%s%n", topic, payloadText);
-                if (!clientProvider.commandTopic().equals(topic)) {
+                System.out.printf("command-received topic=%s payload=%s%n", topic, payloadText);
+                if (!matchesTopic(clientProvider.commandTopic(), topic)) {
                     return;
                 }
                 try {
@@ -60,12 +60,12 @@ public abstract class AbstractMqttCommandConsumer implements AutoCloseable {
                     // 处理command
                     process(command);
 
-                    System.out.printf("mock-device applied command topic=%s commandId=%s intervalMs=%d%n",
+                    System.out.printf("command-applied topic=%s commandId=%s intervalMs=%d%n",
                             topic,
                             command.commandId(),
                             command.params().intervalMs());
                 } catch (Exception exception) {
-                    System.out.printf("mock-device command handling failed topic=%s reason=%s%n",
+                    System.out.printf("command-handling-failed topic=%s reason=%s%n",
                             topic,
                             exception.getMessage());
                     exception.printStackTrace(System.out);
@@ -100,5 +100,30 @@ public abstract class AbstractMqttCommandConsumer implements AutoCloseable {
     @Override
     public void close() {
         clientProvider.close(client);
+    }
+
+    static boolean matchesTopic(String topicFilter, String topic) {
+        return Pattern.compile(toRegex(topicFilter)).matcher(topic).matches();
+    }
+
+    private static String toRegex(String topicFilter) {
+        StringBuilder pattern = new StringBuilder("^");
+        for (int i = 0; i < topicFilter.length(); i++) {
+            char ch = topicFilter.charAt(i);
+            if (ch == '+') {
+                pattern.append("[^/]+");
+                continue;
+            }
+            if (ch == '#') {
+                pattern.append(".+");
+                continue;
+            }
+            if ("\\.[]{}()*+-?^$|".indexOf(ch) >= 0) {
+                pattern.append('\\');
+            }
+            pattern.append(ch);
+        }
+        pattern.append('$');
+        return pattern.toString();
     }
 }

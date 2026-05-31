@@ -7,7 +7,7 @@ public interface Lwm2mServerRuntime {
 
     void start();
 
-    void setReportInterval(SetReportIntervalCommandPayload payload) throws InvalidReportIntervalException;
+    boolean setReportInterval(SetReportIntervalCommandPayload payload) throws InvalidReportIntervalException;
 
     void stop();
 

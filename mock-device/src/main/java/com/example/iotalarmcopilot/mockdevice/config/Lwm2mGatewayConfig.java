@@ -3,7 +3,6 @@ package com.example.iotalarmcopilot.mockdevice.config;
 /**
  * LwM2M网关配置
  *
- * @param enabled
  * @param gatewayId
  * @param bindHost
  * @param bindPort
@@ -16,7 +15,6 @@ package com.example.iotalarmcopilot.mockdevice.config;
  * @param commandConsumerClientId
  */
 public record Lwm2mGatewayConfig(
-        boolean enabled,
         String gatewayId,
         String bindHost,
         int bindPort,
@@ -31,7 +29,6 @@ public record Lwm2mGatewayConfig(
     public static Lwm2mGatewayConfig load() {
         String gatewayId = MockDeviceConfig.read("mock.lwm2m.gatewayId", "MOCK_LWM2M_GATEWAY_ID", "mock-gateway-01");
         return new Lwm2mGatewayConfig(
-                Boolean.parseBoolean(MockDeviceConfig.read("mock.lwm2m.enabled", "MOCK_LWM2M_ENABLED", "true")),
                 gatewayId,
                 MockDeviceConfig.read("mock.lwm2m.bindHost", "MOCK_LWM2M_BIND_HOST", "0.0.0.0"),
                 Integer.parseInt(MockDeviceConfig.read("mock.lwm2m.bindPort", "MOCK_LWM2M_BIND_PORT", "5683")),

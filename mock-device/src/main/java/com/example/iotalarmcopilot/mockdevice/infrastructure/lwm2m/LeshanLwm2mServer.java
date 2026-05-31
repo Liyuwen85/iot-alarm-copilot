@@ -33,6 +33,9 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * lwm2m服务端
+ */
 public class LeshanLwm2mServer implements Lwm2mServerRuntime {
 
     // 采集资源路径
@@ -63,18 +66,18 @@ public class LeshanLwm2mServer implements Lwm2mServerRuntime {
         }
         running = true;
         createServer();
+        server.start();
     }
 
     @Override
-    public void setReportInterval(SetReportIntervalCommandPayload command) throws InvalidReportIntervalException {
+    public boolean setReportInterval(SetReportIntervalCommandPayload command) throws InvalidReportIntervalException {
         if (server == null) {
             throw new InvalidReportIntervalException("gateway server not started");
         }
 
         Registration registration = server.getRegistrationService().getByEndpoint(command.deviceId());
         if (registration == null) {
-            // ignore
-            return;
+            return false;
         }
 
         WriteResponse response;
@@ -98,6 +101,7 @@ public class LeshanLwm2mServer implements Lwm2mServerRuntime {
         if (!response.isSuccess()) {
             throw new InvalidReportIntervalException("lwm2m write failed: " + response.getCode());
         }
+        return true;
     }
 
     @Override
@@ -106,6 +110,7 @@ public class LeshanLwm2mServer implements Lwm2mServerRuntime {
             server.destroy();
             server = null;
         }
+        running = false;
     }
 
     private void createServer() {

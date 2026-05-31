@@ -1,6 +1,10 @@
 package com.example.iotalarmcopilot.mockdevice;
 
-import com.example.iotalarmcopilot.mockdevice.application.*;
+import com.example.iotalarmcopilot.mockdevice.application.GatewayServerService;
+import com.example.iotalarmcopilot.mockdevice.application.GatewayTelemetryDeduplicator;
+import com.example.iotalarmcopilot.mockdevice.application.GatewayTelemetryForwarder;
+import com.example.iotalarmcopilot.mockdevice.application.GatewayTelemetryPublishScheduler;
+import com.example.iotalarmcopilot.mockdevice.application.MockDeviceTelemetryService;
 import com.example.iotalarmcopilot.mockdevice.application.port.Lwm2mServerRuntime;
 import com.example.iotalarmcopilot.mockdevice.config.Lwm2mGatewayConfig;
 import com.example.iotalarmcopilot.mockdevice.config.MockDeviceConfig;
@@ -10,9 +14,6 @@ import com.example.iotalarmcopilot.mockdevice.infrastructure.mqtt.PahoMqttSubscr
 import com.example.iotalarmcopilot.mockdevice.interfaces.mqtt.GatewayMqttCommandConsumer;
 import com.example.iotalarmcopilot.mockdevice.interfaces.mqtt.MockDeviceMqttCommandConsumer;
 
-/**
- * 实现：1. 模拟设备001；2. 模拟LwM2M型网关。
- */
 public final class MockDeviceApplication {
 
     private MockDeviceApplication() {
@@ -21,14 +22,18 @@ public final class MockDeviceApplication {
     public static void main(String[] args) {
         MockDeviceConfig mockDeviceConfig = MockDeviceConfig.load();
         Lwm2mGatewayConfig lwm2mGatewayConfig = Lwm2mGatewayConfig.load();
+        System.out.printf("mock-device starting deviceId=%s telemetryTopic=%s intervalMs=%d maxMessages=%d%n",
+                mockDeviceConfig.deviceId(),
+                mockDeviceConfig.telemetryTopic(),
+                mockDeviceConfig.intervalMs(),
+                mockDeviceConfig.maxMessages());
 
-        // mock-device上报服务
-        PahoMqttMessagePublisher mockDeviceMqttMessagePublisher = new PahoMqttMessagePublisher(mockDeviceConfig.brokerUrl(), mockDeviceConfig.clientId());
+        PahoMqttMessagePublisher mockDeviceMqttMessagePublisher =
+                new PahoMqttMessagePublisher(mockDeviceConfig.brokerUrl(), mockDeviceConfig.clientId());
         MockDeviceTelemetryService mockDeviceTelemetryService = new MockDeviceTelemetryService(
                 mockDeviceConfig,
                 mockDeviceMqttMessagePublisher);
 
-        // mock-device命令消费者
         MockDeviceMqttCommandConsumer mockDeviceMqttCommandConsumer = new MockDeviceMqttCommandConsumer(
                 new PahoMqttSubscriberClientProvider(
                         mockDeviceConfig.brokerUrl(),
@@ -38,8 +43,8 @@ public final class MockDeviceApplication {
                 mockDeviceTelemetryService);
         mockDeviceMqttCommandConsumer.subscribe();
 
-        // gateway上报服务
-        PahoMqttMessagePublisher gatewayMqttMessagePublisher = new PahoMqttMessagePublisher(lwm2mGatewayConfig.brokerUrl(), lwm2mGatewayConfig.mqttClientId());
+        PahoMqttMessagePublisher gatewayMqttMessagePublisher =
+                new PahoMqttMessagePublisher(lwm2mGatewayConfig.brokerUrl(), lwm2mGatewayConfig.mqttClientId());
 
         GatewayTelemetryPublishScheduler gatewayTelemetryPublishScheduler =
                 new GatewayTelemetryPublishScheduler(150L);
@@ -58,9 +63,9 @@ public final class MockDeviceApplication {
                 lwm2MServerRuntime,
                 gatewayMqttMessagePublisher);
 
-        // gateway命令消费者
         GatewayMqttCommandConsumer gatewayMqttCommandConsumer = new GatewayMqttCommandConsumer(
-                new PahoMqttSubscriberClientProvider(lwm2mGatewayConfig.brokerUrl(),
+                new PahoMqttSubscriberClientProvider(
+                        lwm2mGatewayConfig.brokerUrl(),
                         lwm2mGatewayConfig.mqttClientId() + "-cmd",
                         lwm2mGatewayConfig.commandTopicFilter(),
                         lwm2mGatewayConfig.mqttQos()),
@@ -79,8 +84,15 @@ public final class MockDeviceApplication {
             gatewayMqttMessagePublisher.close();
         }));
 
-        gatewayServerService.start();
+        try {
+            gatewayServerService.start();
+            System.out.println("mock-device gateway started");
+        } catch (Exception exception) {
+            System.out.printf("mock-device gateway start failed reason=%s%n", exception.getMessage());
+        }
         mockDeviceTelemetryService.start();
+        System.out.println("mock-device telemetry service started");
         mockDeviceTelemetryService.awaitCompletion();
+        System.out.println("mock-device telemetry service completed");
     }
 }

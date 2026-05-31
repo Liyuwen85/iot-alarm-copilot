@@ -11,6 +11,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.time.OffsetDateTime;
 
+/**
+ * lwm2m网关服务
+ */
 public class GatewayServerService {
 
     private final Lwm2mGatewayConfig config;
@@ -36,6 +39,10 @@ public class GatewayServerService {
         lwm2MServerRuntime.stop();
     }
 
+    /**
+     * 下行命令处理
+     * @param command
+     */
     public void processSetReportIntervalCommandPayload(SetReportIntervalCommandPayload command) {
         if (!"set_report_interval".equalsIgnoreCase(command.commandType())) {
             publishAck(new CommandAckPayload(
@@ -57,7 +64,17 @@ public class GatewayServerService {
         }
 
         try {
-            lwm2MServerRuntime.setReportInterval(command);
+            boolean delivered = lwm2MServerRuntime.setReportInterval(command);
+            if (!delivered) {
+                publishAck(new CommandAckPayload(
+                        command.commandId(),
+                        command.deviceId(),
+                        "FAILED",
+                        OffsetDateTime.now().toString(),
+                        "device is offline or not registered"));
+                return;
+            }
+            String ackTopic = config.commandAckTopicPattern().replace("{deviceId}", command.deviceId());
 
             // 成功回复
             publishAck(new CommandAckPayload(
@@ -67,8 +84,9 @@ public class GatewayServerService {
                     OffsetDateTime.now().toString(),
                     "interval changed to " + command.params().intervalMs()));
 
-            System.out.printf("mock-device applied command topic=%s commandId=%s intervalMs=%d%n",
-                    config.commandAckTopicPattern(),
+            System.out.printf("command-applied source=gateway deviceId=%s ackTopic=%s commandId=%s intervalMs=%d%n",
+                    command.deviceId(),
+                    ackTopic,
                     command.commandId(),
                     command.params().intervalMs());
         } catch (InvalidReportIntervalException e) {
@@ -87,7 +105,7 @@ public class GatewayServerService {
             ackJson = objectMapper.writeValueAsString(ackPayload);
             String ackTopic = config.commandAckTopicPattern().replace("{deviceId}", ackPayload.deviceId());
             mqttMessagePublisher.publish(ackTopic, ackJson, config.mqttQos());
-            System.out.printf("mock-device ack published topic=%s payload=%s%n", ackTopic, ackJson);
+            System.out.printf("command-ack-published source=gateway topic=%s payload=%s%n", ackTopic, ackJson);
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("failed to serialize ack payload", e);
         }
