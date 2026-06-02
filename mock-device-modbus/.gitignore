@@ -1,0 +1,12 @@
+build/
+build-wsl/
+build-wsl-app/
+build-wsl-app-ninja/
+out/
+*.obj
+*.exe
+*.pdb
+*.ilk
+*.log
+_deps/
+docs/
