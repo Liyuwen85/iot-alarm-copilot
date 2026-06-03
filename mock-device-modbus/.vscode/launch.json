@@ -1,0 +1,42 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug mock-device-modbus-ninja (WSL)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build-wsl-app-ninja/mock-device-modbus",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [
+        {
+          "name": "DEVICE_ID",
+          "value": "demo-002"
+        },
+        {
+          "name": "LWM2M_ENDPOINT",
+          "value": "demo-002"
+        },
+        {
+          "name": "POLL_INTERVAL_MS",
+          "value": "1000"
+        }
+      ],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/gdb",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ],
+      "preLaunchTask": "build-wsl-debug-ninja",
+      "logging": {
+        "engineLogging": true
+      }
+    }
+  ]
+}
